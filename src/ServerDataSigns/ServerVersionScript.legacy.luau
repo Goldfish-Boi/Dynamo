@@ -1,0 +1,1 @@
+script.Parent.Version.Text = tostring(game.PlaceVersion)

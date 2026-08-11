@@ -1,0 +1,3 @@
+local menuDataManager = {}
+
+return menuDataManager
