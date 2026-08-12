@@ -36,7 +36,7 @@ local intermissionLength:number = 0
 local bombDutyCountdownLength:number = 0
 local usedCardCount:number = 0
 
-local botCountOverride:number? = nil
+local botCountOverride:number? = 15
 local initialDeckSize:number?
 local roundTime:number?
 
@@ -44,7 +44,7 @@ local deck:{string} = {}
 local tweenTable:{Tween} = {}
 local pillarsTable:{Model} = {}
 local playerTable:{string} = {}
-local plrCards:{any} = {}
+local plrCards:{[number]:{string}} = {}
 
 --------------------------------- Helper Functions ---------------------------------
 
@@ -218,7 +218,7 @@ function setUsedCardsModel(cards:{string}, updateType:string?)
 		local cardPart = workspace.UsedCards:Clone()
 		cardPart.Name = card
 		cardPart.Position = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount - 1)), 0)
-		cardPart.Color = cardInfo[card]["Color"]
+		cardPart.Color = cardInfo[card]["Colour"]
 		cardPart.Orientation = Vector3.new(0, math.random(-100, 100) / 10, 90)
 		cardPart.Transparency = 0
 		cardPart.Size = Vector3.new(0.5, 1.4, 1)
@@ -693,9 +693,43 @@ function initiateAction(index:number, action:{[string]:any})
 	if #playerTable <= 1 then return end
 	
 	if action.Type == "Steal" then
-		print("Steal")
+		if currentTurnIndex ~= index then return end
+		
+		local primary = pillarsTable[index].PrimaryPart
+		if not primary then return end
+		
+		for i, card in action["Cards"] do
+			task.spawn(function()
+				transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+
+				task.wait(1.5)
+
+				setUsedCardsModel({card})
+			end)
+
+			table.remove(plrCards[index], table.find(plrCards[index], card))
+
+			task.wait(0.125)
+		end
 	elseif action.Type == "Triple Steal" then
-		print("Triple Steal")
+		if currentTurnIndex ~= index then return end
+
+		local primary = pillarsTable[index].PrimaryPart
+		if not primary then return end
+
+		for i, card in action["Cards"] do
+			task.spawn(function()
+				transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+
+				task.wait(1.5)
+
+				setUsedCardsModel({card})
+			end)
+			
+			table.remove(plrCards[index], table.find(plrCards[index], card))
+
+			task.wait(0.125)
+		end
 	end
 end
 
@@ -708,10 +742,10 @@ function getDecision(index:number) : string?|{string}?
 	if not isaPlayer then
 		task.wait(math.random(5, 15) / 10)
 		
-		local decision = botLogic.Play(botsFolder:FindFirstChild(playerName), initialDeckSize, #playerTable, #deck)
+		local decision = botLogic.Play(botsFolder:FindFirstChild(playerName), plrCards[index], #playerTable)
 
 		if decision == "Play" then
-			local cardPlayed = botLogic.playCard(botsFolder:FindFirstChild(playerName)::Instance, plrCards[index])
+			local cardPlayed = botLogic.playCard(botsFolder:FindFirstChild(playerName)::Instance, plrCards[index], #playerTable)
 			return cardPlayed == "Take" and "Take" or {cardPlayed}
 		end
 
@@ -997,7 +1031,7 @@ end
 
 --------------------------------- Connections ---------------------------------
 
-replicatedStorage.Communicators.Remotes.Events.InitiateAction.OnServerEvent:Connect(function(plr:Player, actionType:string, cards:{string})
+replicatedStorage.Communicators.Remotes.Events.InitiateAction.OnServerEvent:Connect(function(plr:Player, actionType:string, cards:{string}, target:string)
 	local index = table.find(playerTable, plr.Name)
 	if not index then return end
 	if plr.Name ~= playerTable[currentTurnIndex] then return end
@@ -1013,7 +1047,7 @@ replicatedStorage.Communicators.Remotes.Events.InitiateAction.OnServerEvent:Conn
 			end
 		end
 		
-		initiateAction(index, {["Type"] = actionType, ["Cards"] = cards})
+		initiateAction(index, {["Type"] = actionType, ["Cards"] = cards, ["Target"] = target})
 	end
 end)
 
