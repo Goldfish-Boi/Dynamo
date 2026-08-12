@@ -1,4 +1,4 @@
-const cardInfo = {
+const cardInfo = table.freeze({
 	["CardBack"] = {
 		Colour = Color3.fromRGB(42, 0, 63),
 		IconID = 99152104531422,
@@ -113,7 +113,7 @@ const cardInfo = {
 		BotUsuability = 100
 	},
 	["Cheezburger"] = {
-		Colour = Color3.fromRGB(111, 111, 111),
+		Colour = Color3.fromRGB(200, 200, 200),
 		IconID = 70877843847181,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",
 		MenuDescription = "Mmm... Chezburger",
@@ -125,7 +125,7 @@ const cardInfo = {
 		BotUsuability = 0,
 	},
 	["Bloxy Cola"] = {
-		Colour = Color3.fromRGB(111, 111, 111),
+		Colour = Color3.fromRGB(200, 200, 200),
 		IconID = 117538141877342,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",
 		MenuDescription = "Pepis",
@@ -137,7 +137,7 @@ const cardInfo = {
 		BotUsuability = 0,
 	},
 	["Cake"] = {
-		Colour = Color3.fromRGB(111, 111, 111),
+		Colour = Color3.fromRGB(200, 200, 200),
 		IconID = 70375801848911,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "Yayyyy",
@@ -149,7 +149,7 @@ const cardInfo = {
 		BotUsuability = 0
 	},
 	["Taco"] = {
-		Colour = Color3.fromRGB(111, 111, 111),
+		Colour = Color3.fromRGB(200, 200, 200),
 		IconID = 126573726108374,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "It's raining tacos~~",
@@ -161,7 +161,7 @@ const cardInfo = {
 		BotUsuability = 0
 	},
 	["Choco Milk"] = {
-		Colour = Color3.fromRGB(111, 111, 111),
+		Colour = Color3.fromRGB(200, 200, 200),
 		IconID = 137076446129208,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "Mmmmm, yummy!",
@@ -403,6 +403,6 @@ const cardInfo = {
 		UsuabilityType = "Offense",
 		BotUsuability = 0
 	},
-}
+})
 
 return cardInfo
