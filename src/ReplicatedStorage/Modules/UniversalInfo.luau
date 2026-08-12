@@ -1,4 +1,4 @@
-const univeralInfo = {
+const univeralInfo = table.freeze({
 	["Assets"] = {
 		["BotIcon"] = 80798742429722,
 	},
@@ -90,6 +90,6 @@ const univeralInfo = {
 			Price = 0,
 		},
 	},
-}
+})
 
 return univeralInfo
