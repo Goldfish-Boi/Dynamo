@@ -4,17 +4,49 @@
 local botLogic = {}
 
 local cardInfo:{[string]: any}  = require(game.ReplicatedStorage.Modules.CardInfo)::{[string]: any}
+local deckManager = require(script.Parent.Parent.Managers.DeckManager)
 
-function findHighestPriorityCard(state:string, deck:{string})
-	local desiredType = state
-	local oppositeType = if state == "Defense" then "Offense" else "Defense"
+function computeRisk(hand:{string}, plrCount:number) : number
+	if (not deckManager.InitialDeck) or (not deckManager.CurrentDeck) then return math.random(1, 100) end
+	
+	local startingDeckSize = #deckManager.InitialDeck
+	local deckSize = #deckManager.CurrentDeck
 
+	if deckManager.CurrentDeck[1] == "Exposed Nuke" then
+		return 100
+	end
+	
+	if table.find(hand, "Containment") and not table.find(hand, "Dynamite") then
+		return 0
+	end
+
+	if startingDeckSize == plrCount then
+		return 100
+	else
+		return math.clamp(((startingDeckSize - deckSize) / (startingDeckSize - plrCount)) * 99 + 1, 1, 100)
+	end
+end
+
+function findHighestPriorityCard(state:string, hand:{string}, risk:number) : string
+	local turnsToDo = deckManager.TurnsToDo
+	--local canSteal = false
+	
+	local oppositeState = if state == "Defense" then "Offense" else "Defense"
 	local bestCard = nil
 	local bestValue = -math.huge
+	
+	if turnsToDo > 1 then
+		if state == "Defense" and table.find(hand, "Ultra Skip") then
+			return "Ultra Skip"
+		end
+		if state == "Offense" and table.find(hand, "Attack") then
+			return "Attack"
+		end
+	end
 
 	-- 1. Search for cards matching the desired state
-	for i:number, card:string in ipairs(deck) do
-		if cardInfo[card] and cardInfo[card]["UsuabilityType"] == desiredType and cardInfo[card].Usable == true then
+	for i:number, card:string in ipairs(hand) do
+		if cardInfo[card] and cardInfo[card]["UsuabilityType"] == state and cardInfo[card].Usable == true then
 			if cardInfo[card].BotUsuability > bestValue then
 				bestValue = cardInfo[card].BotUsuability
 				bestCard = card
@@ -29,8 +61,8 @@ function findHighestPriorityCard(state:string, deck:{string})
 	-- 2. Search for cards matching the opposite state
 	bestValue = -math.huge
 	
-	for i:number, card:string in ipairs(deck) do
-		if cardInfo[card] and cardInfo[card].UsuabilityType == oppositeType and cardInfo[card].Usable == true then
+	for i:number, card:string in ipairs(hand) do
+		if cardInfo[card] and cardInfo[card].UsuabilityType == oppositeState and cardInfo[card].Usable == true then
 			if cardInfo[card].BotUsuability > bestValue then
 				bestValue = cardInfo[card].BotUsuability
 				bestCard = card
@@ -46,7 +78,7 @@ function findHighestPriorityCard(state:string, deck:{string})
 	return "Take"
 end
 
-function botLogic.playCard(bot:Instance, deck:{string})
+function botLogic.playCard(bot:Instance, deck:{string}, plrCount:number) : string
 	local state
 	
 	if math.random(1, 10) < bot:GetAttribute("Aggression")::number then
@@ -55,19 +87,11 @@ function botLogic.playCard(bot:Instance, deck:{string})
 		state = "Defense"
 	end
 	
-	return findHighestPriorityCard(state, deck)
+	return findHighestPriorityCard(state, deck, computeRisk(deck, plrCount))
 end
 
-function botLogic.Play(bot, startingDeckSize:number, plrCount:number, deckSize:number)
-	local risk:number
-	
-	if startingDeckSize == plrCount then
-		risk = 100
-	else
-		risk = math.clamp(((startingDeckSize - deckSize) / (startingDeckSize - plrCount)) * 99 + 1, 1, 100)
-	end
-	
-	if math.random(1, 100) >= risk then
+function botLogic.Play(bot:Instance, hand:{string}, plrCount:number) : string
+	if math.random(1, 100) >= computeRisk(hand, plrCount) then
 		return "Play"
 	else
 		return "Take"
