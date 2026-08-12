@@ -1,9 +1,31 @@
 --!strict
 --!optimize 2
 
-local deckManager = {}
+export type DeckModule = {
+	TurnsToDo:number,
+	IsRoundTerminated:boolean,
+	InitialDeck:{string}?,
+	CurrentDeck:{string}?,
+	
+	CreatePlayerDecks: (numberOfPlayers: number) -> {any},
+	CreateDeck: (numberOfPlayers: number) -> {string},
+	InsertCardAtRandomPosition: (deck: {string}, card: string) -> {string},
+	InsertCardAtPosition: (deck: {string}, card: string, position: number) -> {string},
+	GetTurnCount: () -> number,
+	SetTurnCount: (turns: number) -> (),
+	UpdateDeck: (deck: {string}) -> (),
+	GetCurrentDeck: () -> {string}?,
+	Shuffle: (deck: {any}) -> {any},
+}
 
-const cards = {
+local deckManager:DeckModule = {
+	TurnsToDo = 1,
+	IsRoundTerminated = false,
+	InitialDeck = nil,
+	CurrentDeck = nil,
+}::DeckModule
+
+const cards = table.freeze({
 	{Name = "Test", Amount = 3},
 	{Name = "Shuffle", Amount = 1},
 	{Name = "Attack", Amount = 1},
@@ -31,33 +53,28 @@ const cards = {
 	{Name = "Supercharge", Amount = 2},
 	{Name = "Avoid", Amount = 2},
 	{Name = "Snatch", Amount = 2},]]--
-}
+})
 
-const variableCards =  {
+const variableCards = table.freeze({
 	{Name = "Skip", Amount = 1, CanBecome = {"Ultra Skip"}, Chance = {20}},
-}
+})
 
-const nonStartingCards = {
+const nonStartingCards = table.freeze({
 	{Name = "Containment", ChancePerPlr = 7.5},
 	{Name = "Defuse", ChancePerPlr = 33},
-	{Name = "Nuke", ChancePerPlr = 4},
-	{Name = "Doomsday", ChancePerPlr = 2},
-	{Name = "Ploobie", ChancePerPlr = 0.5},
+	--{Name = "Nuke", ChancePerPlr = 4},
+	--{Name = "Doomsday", ChancePerPlr = 2},
+	--{Name = "Ploobie", ChancePerPlr = 0.5},
 	--[[{Name = "Noclip", Amount = 1},
 	{Name = "Defuse", Amount = 3},
 	{Name = "Spacetime dynamite", Amount = 1},
 	{Name = "Doomsday", Amount = 2},]]--
-}
+})
 
 
 local random = Random.new()
 
 local initialDeck:{any}
-local currentDeck:{string}? = nil
-
-local turnsToDo = 1
-
-deckManager["IsRoundTerminated"] = false
 
 function deckManager.CreatePlayerDecks(numberOfPlayers:number)
 	local playerDecks:{any} = {}
@@ -238,19 +255,19 @@ function deckManager.InsertCardAtPosition(deck:{string}, card:string, position:n
 end
 
 function deckManager.GetTurnCount()
-	return turnsToDo
+	return deckManager["TurnsToDo"]
 end
 
 function deckManager.SetTurnCount(turns:number)
-	turnsToDo = turns
+	deckManager["TurnsToDo"] = turns
 end
 
 function deckManager.UpdateDeck(deck:{string})
-	currentDeck = deck
+	deckManager["CurrentDeck"] = deck
 end
 
 function deckManager.GetCurrentDeck()
-	return currentDeck
+	return deckManager["CurrentDeck"]
 end
 
 function deckManager.Shuffle(Deck:{any})
