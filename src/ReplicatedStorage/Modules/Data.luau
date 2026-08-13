@@ -33,7 +33,8 @@ function copyTable(t:{any}) : {[any]:any}
 end
 
 function dataModule.returnPlayerData(plr:Player, returnType:string) : {[string]:any} | string
-	local currentData = stitchData(plr.UserId)
+	--local currentData = stitchData(plr.UserId)
+	local currentData = tablePlayerData[plr.UserId]
 	
 	if returnType == "All" then
 		return currentData
@@ -152,6 +153,8 @@ function dataModule.loadPlayerData(plr:Player)
 	end
 	
 	data = constructPlayerData(data)
+	
+	print(data)
 	
 	tablePlayerData[plr.UserId] = data
 end
