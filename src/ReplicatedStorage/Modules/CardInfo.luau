@@ -1,7 +1,7 @@
 const cardInfo = table.freeze({
 	["CardBack"] = {
 		Colour = Color3.fromRGB(42, 0, 63),
-		IconID = 99152104531422,
+		IconID = 98449158402718,
 	},
 	
 	["Test"] = {
@@ -52,9 +52,9 @@ const cardInfo = table.freeze({
 		UsuabilityType = "Defense",
 		BotUsuability = 999,
 	},
-	["Peek 3x"] = {
+	["Peek"] = {
 		Colour = Color3.fromRGB(180, 138, 214),
-		IconID = nil,
+		IconID = 113840094808338,
 		DeckDescription = "Get a look at the next three cards on the deck",
 		MenuDescription = "Gem alert 🚨🚨🗣️🔥🔥💥",
 		
@@ -78,7 +78,7 @@ const cardInfo = table.freeze({
 	},
 	["Request"] = {
 		Colour = Color3.fromRGB(45, 51, 63),
-		IconID = nil,
+		IconID = 116510499183394,
 		DeckDescription = "Make a player give you one of their cards",
 		MenuDescription = "Gimme gimme",
 		
@@ -102,7 +102,7 @@ const cardInfo = table.freeze({
 	},
 	["Deny"] = {
 		Colour = Color3.fromRGB(161, 10, 13),
-		IconID = nil,
+		IconID = 109600127359870,
 		DeckDescription = "Cancel another player's action. Works on most cards, including itself",
 		MenuDescription = "Nuh uh",
 		
@@ -174,7 +174,7 @@ const cardInfo = table.freeze({
 	},
 	["Analyse"] = {
 		Colour = Color3.fromRGB(104, 20, 90),
-		IconID = nil,
+		IconID = 86306289198577,
 		DeckDescription = "Tells you when the next dynamite will appear in the deck",
 		MenuDescription = "What did he see?",
 		
@@ -208,32 +208,10 @@ const cardInfo = table.freeze({
 		UsuabilityType = "Offense",
 		BotUsuability = 0
 	},
-	["Peek 5x"] = {
-		Colour = Color3.fromRGB(154, 91, 158),
-		IconID = nil,
-		DeckDescription = "Get a look at the next five cards on the deck",
-		
-		Usable = true,
-		CanStack = false,
-
-		UsuabilityType = "Offense",
-		BotUsuability = 0
-	},
-	["Adjust 3x"] = {
+	["Adjust"] = {
 		Colour = Color3.fromRGB(137, 71, 217),
-		IconID = nil,
+		IconID = 106252258774534,
 		DeckDescription = "Change the ordering of the next three cards on the deck",
-		
-		Usable = true,
-		CanStack = false,
-
-		UsuabilityType = "Offense",
-		BotUsuability = 0
-	},
-	["Adjust 5x"] = {
-		Colour = Color3.fromRGB(69, 50, 175),
-		IconID = nil,
-		DeckDescription = "Change the ordering of the next five cards on the deck",
 		
 		Usable = true,
 		CanStack = false,
@@ -255,7 +233,7 @@ const cardInfo = table.freeze({
 	},
 	["Ploobie"] = {
 		Colour = Color3.fromRGB(200, 200, 200),
-		IconID = nil,
+		IconID = 113180431580478,
 		DeckDescription = "Does absolutely nothing",
 		MenuDescription = "Why was this even added???",
 		
@@ -265,9 +243,9 @@ const cardInfo = table.freeze({
 		UsuabilityType = nil,
 		BotUsuability = -math.huge
 	},
-	["Precision Attack"] = {
+	["Targeted Attack"] = {
 		Colour = Color3.fromRGB(214, 139, 74),
-		IconID = nil,
+		IconID = 109000279447257,
 		DeckDescription = "Forces a player of your choice to take two turns, can chain. Ends your turn",	
 		MenuDesciption = "Bye bye Russia 👋👋👋💥",
 		
@@ -279,7 +257,7 @@ const cardInfo = table.freeze({
 	},
 	["Reverse"] = {
 		Colour = Color3.fromRGB(0, 234, 226),
-		IconID = nil,
+		IconID = 111947283702587,
 		DeckDescription = "Reverse the order of play and skips a turn",
 		MenuDescription = "Uno reverse",
 		
@@ -291,9 +269,9 @@ const cardInfo = table.freeze({
 	},
 	["Expose"] = {
 		Colour = Color3.fromRGB(214, 93, 141),
-		IconID = nil,
+		IconID = 100370152296282,
 		DeckDescription = "Reveal a card that another person has",
-		MenuDescription = "",
+		MenuDescription = "Well well well, what do we have here? 😈",
 		
 		Usable = true,
 		CanStack = true,
@@ -317,28 +295,6 @@ const cardInfo = table.freeze({
 		IconID = nil,
 		DeckDescription = "Inverts the deck",	
 		MenuDescription = "kced eht strevnI",
-		
-		Usable = true,
-		CanStack = false,
-
-		UsuabilityType = "Offense",
-		BotUsuability = 0
-	},
-	["Friendly adjust 3x"] = {
-		Colour = Color3.fromRGB(145, 40, 94),
-		IconID = nil,
-		DeckDescription = "Change the ordering of the next three cards with the person whose turn is after you",
-		
-		Usable = true,
-		CanStack = false,
-
-		UsuabilityType = "Offense",
-		BotUsuability = 0
-	},
-	["Friendly adjust 5x"] = {
-		Colour = Color3.fromRGB(127, 26, 31),
-		IconID = nil,
-		DeckDescription = "Change the ordering of the next five cards with the person whose turn is after you",		
 		
 		Usable = true,
 		CanStack = false,
