@@ -2,7 +2,7 @@ local module = {}
 
 local deckManager = require(script.Parent.Parent.Managers.DeckManager)
 
-function module.Main(plr:Player, plrCards:{string})
+function module.Main()
 	deckManager.SetTurnCount(deckManager.GetTurnCount() - 1)
 end
 
