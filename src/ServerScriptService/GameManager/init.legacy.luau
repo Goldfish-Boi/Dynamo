@@ -1,6 +1,8 @@
 --!strict
 --!optimize 2
 
+local types = require(script.Types)
+
 local tweenService = game:GetService("TweenService")
 local serverStorage = game:GetService("ServerStorage")
 local replicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,16 +10,12 @@ local runService = game:GetService("RunService")
 local players = game:GetService("Players")
 local teams = game:GetService("Teams")
 
-type data = {
-	valueType:string,
-	value:any
-}
-
 local require = require
 local universalInfo = require(replicatedStorage.Modules.UniversalInfo)
 local cardInfo = require(replicatedStorage.Modules.CardInfo)
 local deckManager = require(script.Managers.DeckManager)
 local botLogic = require(script.Managers.BotLogic)
+local helpers = require(script.Helpers)
 
 local pi = math.pi
 
@@ -50,10 +48,11 @@ local plrCards:{[number]:{string}} = {}
 
 function clearValues()
 	deck = {}
-	initialDeckSize = nil
 	pillarsTable = {}
 	playerTable = {}
 	plrCards = {}
+	
+	initialDeckSize = nil
 	usedCardCount = 0
 	currentTurnIndex = 0
 end
@@ -77,29 +76,19 @@ function bezier(object:BasePart, tweenInfo:TweenInfo, p0:Vector3, p1:Vector3, p2
 	end)
 end
 
-function copyTable(t:{any}) : {[any]:any}
-	if typeof(t) ~= "table" then return t end
+function createRoundSnapshot() : types.roundSnapshot
+	local snapShot:types.roundSnapshot = {
+		currentTurnIndex = currentTurnIndex,
+		usedCardCount = usedCardCount,
+		initialDeckSize = initialDeckSize,
+		roundTime = roundTime,
+		deck = helpers.copyTable(deck),
+		pillarsTable = helpers.copyTable(pillarsTable),
+		playerTable = helpers.copyTable(playerTable),
+		plrCards = helpers.copyTable(plrCards),
+	}
 
-	local copy = {}
-
-	for k, v in pairs(t) do
-		copy[k] = copyTable(v)
-	end
-
-	return copy
-end
-
-function isPlayer(index:number) : (boolean, Player?)
-	if #playerTable == 0 then return false, nil end
-	
-	local plr = playerTable[index]
-	local player = players:FindFirstChild(plr)
-	
-	if player then
-		return true, player::Player
-	else
-		return false, nil
-	end
+	return snapShot
 end
 
 function formatTime(seconds:number) : string
@@ -241,7 +230,7 @@ function setPillars()
 		local pillar = replicatedStorage.Assets.Pillars.Test:Clone()
 		local circumference = 25 * #playerTable
 		local radius = math.max(circumference / (2 * math.pi), 50)
-		local isaPlayer, player = isPlayer(i)
+		local isaPlayer, player = helpers.isPlayer(i)
 
 		if not pillar.PrimaryPart then continue end
 
@@ -301,7 +290,7 @@ function setCircles(enabled:boolean)
 
 		local circle = circleTemplate:Clone()
 		local plr = playerTable[i]
-		local isaPlayer, player = isPlayer(i)
+		local isaPlayer, player = helpers.isPlayer(i)
 
 		local theta = math.rad(i * 360 / n)
 		local dx = -math.cos(theta)
@@ -354,7 +343,7 @@ function setPlayerStatuses(enabled:boolean)
 	
 	for i, playerName in ipairs(playerTable) do
 		local playerStatusFrame = playerStatus.SurfaceGui.ScrollingFrame.PlayerTemplate:Clone()
-		local isaPlayer, player = isPlayer(i)
+		local isaPlayer, player = helpers.isPlayer(i)
 		
 		playerStatusFrame.Name = playerName
 		
@@ -432,7 +421,7 @@ function updatePlayerStatus(index:number, status:string)
 end
 
 function moveTurnIndicator(index:number, tween:boolean?)
-	local isaPlayer, player = isPlayer(index)
+	local isaPlayer, player = helpers.isPlayer(index)
 	
 	local primary
 	
@@ -503,7 +492,7 @@ function eliminatePlayer(index:number, leaving:boolean?)
 	local playerName = playerTable[index]
 	if not playerName then return end
 	
-	local isaPlayer, player = isPlayer(index)
+	local isaPlayer, player = helpers.isPlayer(index)
 	local pillarToDestroy
 	
 	
@@ -581,7 +570,7 @@ function cardTakenFromDeck(index:number) : boolean
 	if (not deck) or (not plrCards) then return false end
 
 	local card = deck[1]
-	local isaPlayer, player = isPlayer(index)
+	local isaPlayer, player = helpers.isPlayer(index)
 	local from = roundFolder.Cards.Deck:FindFirstChild(tostring(#deck))::BasePart
 	
 	table.remove(deck, 1)
@@ -692,44 +681,50 @@ function initiateAction(index:number, action:{[string]:any})
 	if not plrCards then return end
 	if #playerTable <= 1 then return end
 	
+	local isaPlayer, player = helpers.isPlayer(index)
+	
 	if action.Type == "Steal" then
 		if currentTurnIndex ~= index then return end
 		
 		local primary = pillarsTable[index].PrimaryPart
 		if not primary then return end
 		
-		for i, card in action["Cards"] do
-			task.spawn(function()
-				transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+		task.spawn(function()
+			for i, card in action["Cards"] do
+				task.spawn(function()
+					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
 
-				task.wait(1.5)
+					task.wait(1.5)
 
-				setUsedCardsModel({card})
-			end)
+					setUsedCardsModel({card})
+				end)
 
-			table.remove(plrCards[index], table.find(plrCards[index], card))
+				table.remove(plrCards[index], table.find(plrCards[index], card))
 
-			task.wait(0.125)
-		end
+				task.wait(0.125)
+			end
+		end)
 	elseif action.Type == "Triple Steal" then
 		if currentTurnIndex ~= index then return end
 
 		local primary = pillarsTable[index].PrimaryPart
 		if not primary then return end
+		
+		task.spawn(function()
+			for i, card in action["Cards"] do
+				task.spawn(function()
+					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
 
-		for i, card in action["Cards"] do
-			task.spawn(function()
-				transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+					task.wait(1.5)
 
-				task.wait(1.5)
+					setUsedCardsModel({card})
+				end)
 
-				setUsedCardsModel({card})
-			end)
-			
-			table.remove(plrCards[index], table.find(plrCards[index], card))
+				table.remove(plrCards[index], table.find(plrCards[index], card))
 
-			task.wait(0.125)
-		end
+				task.wait(0.125)
+			end
+		end)
 	end
 end
 
@@ -737,7 +732,7 @@ function getDecision(index:number) : string?|{string}?
 	if not deck then return nil end
 	
 	local playerName = playerTable[index]
-	local isaPlayer, player = isPlayer(index)
+	local isaPlayer, player = helpers.isPlayer(index)
 
 	if not isaPlayer then
 		task.wait(math.random(5, 15) / 10)
@@ -769,7 +764,7 @@ end
 
 function checkDecision(index:number, decision:string | {string} ) : boolean
 	local playerName = playerTable[index]
-	local isaPlayer, player = isPlayer(index)
+	local isaPlayer, player = helpers.isPlayer(index)
 
 	if decision == "Disconnected" then
 		removePlayerFromTable(index)
@@ -879,8 +874,6 @@ function turn(index:number) : boolean
 		task.wait(0.25)
 	until deckManager.GetTurnCount() <= 0 or eliminated
 
-	deckManager.UpdateDeck(deck)
-
 	return eliminated
 end
 
@@ -901,8 +894,6 @@ function beginRound()
 	setCircles(true)
 	setPlayerStatuses(true)
 	setDeckModel("Set")
-	
-	deckManager.UpdateDeck(deck)
 	
 	task.wait(2)
 end
@@ -942,7 +933,7 @@ function endRound()
 	botsFolder:ClearAllChildren()
 
 	for i, playerName in ipairs(playerTable) do
-		local isaPlayer, player = isPlayer(i)
+		local isaPlayer, player = helpers.isPlayer(i)
 		
 		if (not isaPlayer) or (not player) then continue end
 		
@@ -1036,7 +1027,7 @@ replicatedStorage.Communicators.Remotes.Events.InitiateAction.OnServerEvent:Conn
 	if not index then return end
 	if plr.Name ~= playerTable[currentTurnIndex] then return end
 	
-	local currentCards = copyTable(plrCards[index])
+	local currentCards = helpers.copyTable(plrCards[index])
 	
 	if (actionType == "Steal" or "Triple Steal") then
 		for i, card in ipairs(cards) do
@@ -1050,6 +1041,13 @@ replicatedStorage.Communicators.Remotes.Events.InitiateAction.OnServerEvent:Conn
 		initiateAction(index, {["Type"] = actionType, ["Cards"] = cards, ["Target"] = target})
 	end
 end)
+
+helpers.setProviders(
+	function() return playerTable end,
+	function() return pillarsTable end,
+	function() return deck end,
+	function() return plrCards end
+)
 
 function init()
 	turnIndicator.Size = Vector3.new(0.01, 0.015, 0.01)
