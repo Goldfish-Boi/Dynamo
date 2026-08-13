@@ -1,7 +1,15 @@
+--!strict
+--!optimize 2
+
+local types = require(script.Parent.Parent.Types)
+local helpers:types.Helpers = require(script.Parent.Parent.Helpers)
+
 local module = {}
 
-function module.Main(plr:Player, plrCards:{string})
-	local deck = require(script.Parent.Parent.Managers.DeckManager).GetCurrentDeck()
+function module.Main()
+	if not helpers.getDeck then warn("No Helpers registered") return end
+
+	local deck = helpers.getDeck()
 	
 	print(deck)
 	
