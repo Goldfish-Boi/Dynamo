@@ -1,74 +1,50 @@
 --!strict
 --!optimize 2
 
-export type DeckModule = {
-	TurnsToDo:number,
-	IsRoundTerminated:boolean,
-	InitialDeck:{string}?,
-	CurrentDeck:{string}?,
-	
-	CreatePlayerDecks: (numberOfPlayers: number) -> {any},
-	CreateDeck: (numberOfPlayers: number) -> {string},
-	InsertCardAtRandomPosition: (deck: {string}, card: string) -> {string},
-	InsertCardAtPosition: (deck: {string}, card: string, position: number) -> {string},
-	GetTurnCount: () -> number,
-	SetTurnCount: (turns: number) -> (),
-	UpdateDeck: (deck: {string}) -> (),
-	GetCurrentDeck: () -> {string}?,
-	Shuffle: (deck: {any}) -> {any},
-}
+local types = require(script.Parent.Parent.Types)
 
-local deckManager:DeckModule = {
+local deckManager = {
 	TurnsToDo = 1,
 	IsRoundTerminated = false,
 	InitialDeck = nil,
 	CurrentDeck = nil,
-}::DeckModule
+}
+--::types.deckManager
 
 const cards = table.freeze({
-	{Name = "Test", Amount = 3},
-	{Name = "Shuffle", Amount = 1},
-	{Name = "Attack", Amount = 1},
-	{Name = "Cheezburger", Amount = 1},
-	{Name = "Bloxy Cola", Amount = 1},
-	{Name = "Cake", Amount = 1},
-	{Name = "Taco", Amount = 1},
-	{Name = "Choco Milk", Amount = 1},
-	--{Name = "Request", Amount = 2},
-	--{Name = "Peek 3x", Amount = 3},
-	--{Name = "Deny", Amount = 3},
-	--{Name = "Analyse", Amount = 3},
-	--{Name = "Dynamite", Amount = 1},
-	--[[{Name = "Peek 5x", Amount = 2},
-	{Name = "Adjust 3x", Amount = 2},
-	{Name = "Adjust 5x", Amount = 1},
-	{Name = "Ploobie", Amount = 2},
-	{Name = "Precision Attack", Amount = 1},
-	{Name = "Reverse", Amount = 2},
-	{Name = "Expose", Amount = 2},
+	--{Name = "Test", ChancePerPlr = 300},
+	{Name = "Shuffle", ChancePerPlr = 100},
+	{Name = "Cheezburger", ChancePerPlr = 100},
+	{Name = "Bloxy Cola", ChancePerPlr = 100},
+	{Name = "Cake", ChancePerPlr = 100},
+	{Name = "Taco", ChancePerPlr = 100},
+	{Name = "Choco Milk", ChancePerPlr = 100},
+	{Name = "Request", ChancePerPlr = 125},
+	{Name = "Deny", ChancePerPlr = 125},
+	{Name = "Analyse", ChancePerPlr = 80},
+	{Name = "Expose", ChancePerPlr = 33},
+	{Name = "Reverse", ChancePerPlr = 75},
+	--[[{Name = "Ploobie", Amount = 2},
 	{Name = "Draw from the bottom", Amount = 1},
 	{Name = "Invert", Amount = 1},
-	{Name = "Friendly adjust 3x", Amount = 1},
-	{Name = "Friendly adjust 5x", Amount = 1},
 	{Name = "Supercharge", Amount = 2},
 	{Name = "Avoid", Amount = 2},
 	{Name = "Snatch", Amount = 2},]]--
 })
 
 const variableCards = table.freeze({
-	{Name = "Skip", Amount = 1, CanBecome = {"Ultra Skip"}, Chance = {20}},
+	{Name = "Skip", ChancePerPlr = 100, CanBecome = {"Ultra Skip"}, Chance = {20}},
+	{Name = "Attack", ChancePerPlr = 100, CanBecome = {"Targeted Attack"}, Chance = {33}},
+	{Name = "Peek", ChancePerPlr = 100, CanBecome = {"Adjust"}, Chance = {50}},
 })
 
 const nonStartingCards = table.freeze({
 	{Name = "Containment", ChancePerPlr = 7.5},
 	{Name = "Defuse", ChancePerPlr = 33},
-	--{Name = "Nuke", ChancePerPlr = 4},
-	--{Name = "Doomsday", ChancePerPlr = 2},
-	--{Name = "Ploobie", ChancePerPlr = 0.5},
-	--[[{Name = "Noclip", Amount = 1},
-	{Name = "Defuse", Amount = 3},
-	{Name = "Spacetime dynamite", Amount = 1},
-	{Name = "Doomsday", Amount = 2},]]--
+	{Name = "Nuke", ChancePerPlr = 4},
+	{Name = "Doomsday", ChancePerPlr = 2},
+	{Name = "Ploobie", ChancePerPlr = 0.5},
+	--{Name = "Noclip", Amount = 1},
 })
 
 
@@ -90,15 +66,47 @@ function deckManager.CreatePlayerDecks(numberOfPlayers:number)
 		end
 	end]]--
 	
-	for i, card in pairs(cards) do
+	--[[for i, card in pairs(cards) do
 		for j = 1, card.Amount * numberOfPlayers do
 			cardCount += 1
 			
 			initialDeck[cardCount] = card.Name
 		end
+	end]]--
+	
+	for i, card in ipairs(cards) do
+		local loops = (card.ChancePerPlr * numberOfPlayers) // 100
+
+		if loops == 0 then
+			if math.random(1, 100) <= (card.ChancePerPlr * numberOfPlayers) % 100 then
+				cardCount += 1
+
+				initialDeck[cardCount] = card.Name
+			end
+		elseif math.floor(loops) == loops then
+			for count = 1, loops do
+				cardCount += 1
+
+				initialDeck[cardCount] = card.Name
+			end
+		else
+			for count = 1, loops do
+				if count == loops then
+					if math.random(1, 100) <= (card.ChancePerPlr * numberOfPlayers) % 100 then
+						cardCount += 1
+
+						initialDeck[cardCount] = card.Name
+					end
+				else
+					cardCount += 1
+
+					initialDeck[cardCount] = card.Name
+				end
+			end
+		end
 	end
 	
-	for i, card in pairs(variableCards) do
+	--[[for i, card in pairs(variableCards) do
 		for j = 1, card.Amount * numberOfPlayers do
 			cardCount += 1
 			
@@ -109,6 +117,70 @@ function deckManager.CreatePlayerDecks(numberOfPlayers:number)
 				else
 					initialDeck[cardCount] = card.Name
 					break
+				end
+			end
+		end
+	end]]--
+	
+	for i, card in ipairs(variableCards) do
+		local loops = (card.ChancePerPlr * numberOfPlayers) // 100
+
+		if loops == 0 then
+			if math.random(1, 100) <= (card.ChancePerPlr * numberOfPlayers) % 100 then
+				cardCount += 1
+
+				for i, variation in ipairs(card.CanBecome) do
+					if math.random(1, 100) <= card.Chance[i] then
+						initialDeck[cardCount] = variation
+						break
+					else
+						initialDeck[cardCount] = card.Name
+						break
+					end
+				end
+			end
+		elseif math.floor(loops) == loops then
+			for count = 1, loops do
+				cardCount += 1
+
+				for i, variation in ipairs(card.CanBecome) do
+					if math.random(1, 100) <= card.Chance[i] then
+						initialDeck[cardCount] = variation
+						break
+					else
+						initialDeck[cardCount] = card.Name
+						break
+					end
+				end
+			end
+		else
+			for count = 1, loops do
+				if count == loops then
+					if math.random(1, 100) <= (card.ChancePerPlr * numberOfPlayers) % 100 then
+						cardCount += 1
+
+						for i, variation in ipairs(card.CanBecome) do
+							if math.random(1, 100) <= card.Chance[i] then
+								initialDeck[cardCount] = variation
+								break
+							else
+								initialDeck[cardCount] = card.Name
+								break
+							end
+						end
+					end
+				else
+					cardCount += 1
+
+					for i, variation in ipairs(card.CanBecome) do
+						if math.random(1, 100) <= card.Chance[i] then
+							initialDeck[cardCount] = variation
+							break
+						else
+							initialDeck[cardCount] = card.Name
+							break
+						end
+					end
 				end
 			end
 		end
@@ -175,8 +247,6 @@ function deckManager.CreateDeck(numberOfPlayers:number)
 	
 	for i, nonStartingCard in ipairs(nonStartingCards) do
 		local loops = (nonStartingCard.ChancePerPlr * numberOfPlayers) // 100
-
-		print(loops)
 		
 		if loops == 0 then
 			if math.random(1, 100) <= (nonStartingCard.ChancePerPlr * numberOfPlayers) % 100 then
@@ -260,14 +330,6 @@ end
 
 function deckManager.SetTurnCount(turns:number)
 	deckManager["TurnsToDo"] = turns
-end
-
-function deckManager.UpdateDeck(deck:{string})
-	deckManager["CurrentDeck"] = deck
-end
-
-function deckManager.GetCurrentDeck()
-	return deckManager["CurrentDeck"]
 end
 
 function deckManager.Shuffle(Deck:{any})
