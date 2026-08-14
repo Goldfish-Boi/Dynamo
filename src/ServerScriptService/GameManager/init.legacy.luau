@@ -677,6 +677,7 @@ function cardTakenFromDeck(index:number) : boolean
 	return true
 end
 
+--[[
 function initiateAction(index:number, action:{[string]:any})
 	if not plrCards then return end
 	if #playerTable <= 1 then return end
@@ -727,6 +728,7 @@ function initiateAction(index:number, action:{[string]:any})
 		end)
 	end
 end
+]]--
 
 function getDecision(index:number) : string?|{string}?
 	if not deck then return nil end
@@ -749,10 +751,8 @@ function getDecision(index:number) : string?|{string}?
 	
 	if not player then return nil end
 
-	local playerDecision:string|{string}
-	
-	local success = pcall(function()
-		playerDecision = replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player)
+	local success, playerDecision:string|{string} = pcall(function()
+		return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "Take")
 	end)
 
 	if not success then
@@ -777,7 +777,7 @@ function checkDecision(index:number, decision:string | {string} ) : boolean
 			
 			local module = script.CardModules:FindFirstChild(decision[1])::Instance
 			if module then
-				require(script.CardModules:FindFirstChild(decision[1])::Instance).Main(player, plrCards[index])
+				require(script.CardModules:FindFirstChild(decision[1])::Instance).Main(index, decision)
 			end
 			
 			local primary = pillarsTable[index].PrimaryPart
@@ -793,10 +793,12 @@ function checkDecision(index:number, decision:string | {string} ) : boolean
 			
 			table.remove(plrCards[index], table.find(plrCards[index], decision[1]))
 		else
+			
+			
 			for i, card in ipairs(decision) do
 				local module = script.CardModules:FindFirstChild(decision[i])::Instance
 				if module then
-					require(script.CardModules:FindFirstChild(decision[i])::Instance).Main(player, plrCards[index])
+					require(script.CardModules:FindFirstChild(decision[i])::Instance).Main(index, decision)
 				end
 
 				local primary = pillarsTable[index].PrimaryPart
@@ -1020,25 +1022,70 @@ function gameLoop()
 	end
 end
 
---------------------------------- Connections ---------------------------------
-
-replicatedStorage.Communicators.Remotes.Events.InitiateAction.OnServerEvent:Connect(function(plr:Player, actionType:string, cards:{string}, target:string)
-	local index = table.find(playerTable, plr.Name)
-	if not index then return end
-	if plr.Name ~= playerTable[currentTurnIndex] then return end
+function initiateAction(index:number, actionInfo:types.ActionInfo)
+	if index ~= currentTurnIndex then return end
 	
 	local currentCards = helpers.copyTable(plrCards[index])
 	
-	if (actionType == "Steal" or "Triple Steal") then
-		for i, card in ipairs(cards) do
-			if table.find(currentCards, card) then
-				table.remove(currentCards, table.find(currentCards, card))
-			else
-				return
-			end
+	print(actionInfo)
+	
+	for i, card in ipairs(actionInfo.Cards) do
+		if table.find(currentCards, card) then
+			table.remove(currentCards, table.find(currentCards, card))
+		else
+			return
 		end
+	end
+	
+	local primary = pillarsTable[index].PrimaryPart
+	if not primary then return end
+	
+	if actionInfo.Type == "Steal" then
+		task.spawn(function()
+			for i, card in actionInfo.Cards do
+				task.spawn(function()
+					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+
+					task.wait(1.5)
+
+					setUsedCardsModel({card})
+				end)
+
+				table.remove(plrCards[index], table.find(plrCards[index], card))
+
+				task.wait(0.125)
+			end
+		end)
 		
-		initiateAction(index, {["Type"] = actionType, ["Cards"] = cards, ["Target"] = target})
+		require(script.ActionModules.Steal).Steal(index, actionInfo)
+	elseif actionInfo.Type == "Triple Steal" then
+		task.spawn(function()
+			for i, card in actionInfo.Cards do
+				task.spawn(function()
+					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+
+					task.wait(1.5)
+
+					setUsedCardsModel({card})
+				end)
+
+				table.remove(plrCards[index], table.find(plrCards[index], card))
+
+				task.wait(0.125)
+			end
+		end)
+		
+		require(script.ActionModules.Steal).TripleSteal(index, actionInfo)
+	end
+end
+
+--------------------------------- Connections ---------------------------------
+
+replicatedStorage.Communicators.Remotes.Events.InitiateAction.OnServerEvent:Connect(function(plr:Player, actionInfo:types.ActionInfo)
+	local index = table.find(playerTable, plr.Name)
+	
+	if index then
+		initiateAction(index, actionInfo)
 	end
 end)
 
