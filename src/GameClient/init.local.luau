@@ -20,7 +20,7 @@ local cardActions = gui.CardActions
 local sounds = script.Sounds
 
 local dragTarget:UDim2?
-local decision:string|{string}?
+local decision:string|{string}|number?
 
 --local cardCount:number = 0
 local debounce:boolean = false
@@ -360,7 +360,9 @@ function addCardFunctionality(card:Frame)
 			moveCardToPosition(card, n)
 		end
 
-		updateAllCardArcs()
+		task.delay(0.1, function()
+			updateAllCardArcs()
+		end)
 
 		local rest = cardRestState[card] or {rotation = 0, yOffset = 0}
 		icon.Position = UDim2.fromScale(0.5, 0.5 + rest.yOffset)
@@ -378,7 +380,7 @@ function addCardFunctionality(card:Frame)
 					tweenService:Create(shadow, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BlurRadius = UDim.new(0, 0), Offset = UDim2.fromScale(0, 0)}):Play()
 				end
 				
-				tweenService:Create(pc, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.fromOffset(card.AbsolutePosition.X, card.AbsolutePosition.Y), Rotation = 0}):Play()
+				tweenService:Create(pc, TweenInfo.new(0.1, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.fromOffset(card.AbsolutePosition.X, card.AbsolutePosition.Y), Rotation = rest.rotation}):Play()
 				task.wait(0.1)
 				
 				pc:Destroy()
@@ -439,7 +441,7 @@ function addCard(card:string | {string})
 		newCard.Icon.BackgroundColor3 = Color3.new(0, 0, 0)
 	else
 		newCard.Icon.BackgroundColor3 = cardInfo[card]["Colour"]
-
+		newCard.Icon.ImageTransparency = 1
 	end
 
 	newCard.LayoutOrder = #cards * 10
@@ -666,7 +668,7 @@ cardActions.Steal.Activated:Connect(function()
 			table.insert(cardNames, card.Name)
 		end
 		
-		replicatedStorage.Communicators.Remotes.Events.InitiateAction:FireServer(if #cardsSelected == 3 then "Triple Steal" else "Steal", cardNames)
+		replicatedStorage.Communicators.Remotes.Events.InitiateAction:FireServer({Type = if #cardsSelected == 3 then "Triple Steal" else "Steal", TargetIndex = 1, Cards = cardNames, RequestedCard = if #cardsSelected == 3 then "Defuse" else nil})
 		
 		for i, card in ipairs(cardsToRemove) do
 			local indexToRemove = table.find(cards, card)
@@ -693,13 +695,52 @@ function hoverCard(card:Frame)
 	tweenService:Create(icon, TweenInfo.new(0.05, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.125)}):Play()
 end
 
-replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClientInvoke = function():string|{string}
+function terminateDecision()
+	decision = nil
+	gui.TakeCard.Visible = false
+	
+	tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, -0.25)}):Play()
+	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
+
+	deselectAllCards()
+end
+
+replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClientInvoke = function(DecisionType:string, Data1:number) : string | {string} | number
 	antiInactivityCountdown = 20
 	decision = "Awaiting"
 	
-	gui.TakeCard.Visible = true
-	
-	activateCards(true)
+	if DecisionType == "Take" then
+		gui.TakeCard.Visible = true
+
+		activateCards(true)
+	elseif DecisionType == "Steal" then
+		gui.TakeCard.Visible = false
+		
+		for count = 1, Data1 do
+			local newCard = script.CardTemplate:Clone()
+
+			newCard.Icon.Image = "rbxassetid://" .. cardInfo["CardBack"]["IconID"]
+			newCard.LayoutOrder = count
+			newCard.ZIndex = count
+			newCard.Visible = true
+			newCard.Name = tostring(count)
+			
+			newCard.Parent = gui.StealCardContainer
+			
+			newCard.Icon.Activated:Connect(function()
+				if decision == "Awaiting" then
+					decision = count
+				end
+			end)
+		end
+		
+		print("Goott")
+		
+		tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.25)}):Play()
+		tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 1.25)}):Play()
+		
+		activateCards(false)
+	end
 	
 	if countdownThread then
 		coroutine.close(countdownThread)
@@ -711,7 +752,6 @@ replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClient
 				break
 			else
 				antiInactivityCountdown -= 1
-				--print(antiInactivityCountdown)
 			end
 		end
 	end)
@@ -721,10 +761,7 @@ replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClient
 			print(decision)
 			
 			task.defer(function()
-				decision = nil
-				gui.TakeCard.Visible = false
-				
-				deselectAllCards()
+				terminateDecision()
 			end)
 			
 			return decision
@@ -732,10 +769,7 @@ replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClient
 		
 		if antiInactivityCountdown == 0 then
 			task.defer(function()
-				decision = nil
-				gui.TakeCard.Visible = false
-				
-				deselectAllCards()
+				terminateDecision()
 			end)
 			
 			return "AFK"
@@ -743,10 +777,7 @@ replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClient
 	end
 	
 	task.defer(function()
-		decision = nil
-		gui.TakeCard.Visible = false
-		
-		deselectAllCards()
+		terminateDecision()
 	end)
 	
 	return "AFK"
@@ -764,6 +795,7 @@ replicatedStorage.Communicators.Remotes.Events.TransitionWithRound.OnClientEvent
 	task.wait(if cardContainer.Visible == true then 0 else 3)
 	
 	cardContainer.Visible = not cardContainer.Visible
+	gui.StealCardContainer.Visible = not gui.StealCardContainer.Visible
 	cardDescription.Visible = not cardDescription.Visible
 end)
 
