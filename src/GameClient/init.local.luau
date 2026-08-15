@@ -8,6 +8,7 @@ local debris = game:GetService("Debris")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local cardInfo:{[string]:any} = require(replicatedStorage.Modules.CardInfo)::{[string]:any}
+local universalInfo:{[string]:any} = require(replicatedStorage.Modules.UniversalInfo)::{[string]:any}
 
 local gui = script.Parent
 local cardContainer = gui.CardContainer
@@ -24,6 +25,7 @@ local decision:string|{string}|number?
 
 --local cardCount:number = 0
 local debounce:boolean = false
+local hoveredCard:Frame? = nil
 local antiInactivityCountdown:number = 20
 
 local cardRestState:{[Frame] : {rotation:number, yOffset:number}} = {}
@@ -32,6 +34,11 @@ local cardsSelected:{Frame} = {}
 
 local dragConnection:RBXScriptConnection?
 local countdownThread:thread
+
+---------------------------------------------------------------------------------------------
+
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+listLayout.HorizontalFlex = Enum.UIFlexAlignment.SpaceEvenly
 
 -------------------------------------- Helper Functions --------------------------------------
 
@@ -218,12 +225,32 @@ function updateCardActions(card:Frame?)
 	end
 
 	if card then
-		cardActions.Use.TextLabel.Text = if cardInfo[card.Name]["CanStack"] and #cardsSelected > 1 then "Use Multiple" else "Use"
-		cardActions.Steal.TextLabel.Text = if #cardsSelected <= 2 then "Steal" else "Super Steal"
+		if cardInfo[card.Name]["CanStack"] and #cardsSelected > 1 then
+			cardActions.Use.TextLabel.Text = "Use Multiple"
+			cardActions.Use.ImageLabel.Image = "rbxassetid://" .. universalInfo["Assets"]["UseMultiple"]
+		else
+			cardActions.Use.TextLabel.Text = "Use"
+			cardActions.Use.ImageLabel.Image = "rbxassetid://" .. universalInfo["Assets"]["UseCard"]
+		end
+		
+		if #cardsSelected <= 2 then
+			cardActions.Steal.TextLabel.Text = "Steal"
+			cardActions.Steal.ImageLabel.Image = "rbxassetid://" .. universalInfo["Assets"]["Steal"]
+		else
+			cardActions.Steal.TextLabel.Text = "Triple Steal"
+			cardActions.Steal.ImageLabel.Image = "rbxassetid://" .. universalInfo["Assets"]["TripleSteal"]
+		end
 	end
 end
 
 -------------------------------------- Primary Functions --------------------------------------
+
+function hoverCard(card:Frame, hovering:boolean)
+	local rest = cardRestState[card] or {rotation = 0, yOffset = 0}
+	local icon:ImageButton = card:FindFirstChild("Icon")::ImageButton
+	
+	tweenService:Create(icon, TweenInfo.new(0.125, Enum.EasingStyle.Back, Enum.EasingDirection.Out), if hovering then {Position = UDim2.fromScale(0.5, math.max(0.5 + rest.yOffset - 0.375, 0)), Rotation = 0} else {Position = UDim2.fromScale(0.5, 0.5 + rest.yOffset), Rotation = rest.rotation}):Play()
+end
 
 function addCardFunctionality(card:Frame)
 	local icon:ImageButton = card:FindFirstChild("Icon")::ImageButton
@@ -232,23 +259,47 @@ function addCardFunctionality(card:Frame)
 	local dragDetector = icon:FindFirstChildOfClass("UIDragDetector")
 	if not dragDetector then return end
 
-	card.MouseEnter:Connect(function()
+	--[[card.MouseEnter:Connect(function()
 		if table.find(cardsSelected, card) or dragConnection then return end
+		if hoveredCard == card then return end
+		if hoveredCard and hoveredCard.ZIndex > card.ZIndex then return end
+		
+		if hoveredCard and hoveredCard.ZIndex < card.ZIndex then
+			hoverCard(hoveredCard, false)
+		end
+		
+		hoveredCard = card
 
-		local rest = cardRestState[card] or {rotation = 0, yOffset = 0}
-
-		tweenService:Create(icon, TweenInfo.new(0.125, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, math.max(0.5 + rest.yOffset - 0.375, 0)), Rotation = 0}):Play()
+		hoverCard(card, true)
+	end)]]--
+	
+	card.MouseMoved:Connect(function()
+		if table.find(cardsSelected, card) or dragConnection or hoveredCard == card or (hoveredCard and hoveredCard.ZIndex > card.ZIndex) then return end
+		
+		if hoveredCard and hoveredCard.ZIndex < card.ZIndex and (not table.find(cardsSelected, hoveredCard)) then
+			hoverCard(hoveredCard, false)
+		end
+		
+		hoveredCard = card
+		
+		hoverCard(card, true)
 	end)
 
 	card.MouseLeave:Connect(function()
 		if table.find(cardsSelected, card) or dragConnection then return end
-
-		local rest = cardRestState[card] or {rotation = 0, yOffset = 0}
-
-		tweenService:Create(icon, TweenInfo.new(0.125, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.5 + rest.yOffset), Rotation = rest.rotation}):Play()
+		
+		if hoveredCard == card then
+			hoveredCard = nil
+		end
+		
+		hoverCard(card, false)
 	end)
 
 	icon.Activated:Connect(function()
+		if hoveredCard == card then
+			hoveredCard = nil
+		end
+		
 		selectCard(card)
 	end)
 	
@@ -398,9 +449,6 @@ function addCardFunctionality(card:Frame)
 	end)
 end
 
-listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-listLayout.HorizontalFlex = Enum.UIFlexAlignment.SpaceEvenly
-
 function updateScaling()
 	if #cards == 0 then return end
 
@@ -425,6 +473,31 @@ function updateScaling()
 	end
 end
 
+function updateStealScaling()
+	if (#gui.StealCardContainer:GetChildren() - 1) == 0 then return end
+	
+	local containerWidth = gui.StealCardContainer.AbsoluteSize.X
+	local card = gui.StealCardContainer:FindFirstChildOfClass("Frame")::Frame
+	local cardWidth = card.AbsoluteSize.X
+
+	if (#gui.StealCardContainer:GetChildren() - 1) == 1 then
+		gui.StealCardContainer.UIListLayout.Padding = UDim.new(0, 0)
+		return
+	end
+
+	local totalCardWidth = cardWidth * (#gui.StealCardContainer:GetChildren() - 1)
+	local availableGapSpace = containerWidth - totalCardWidth
+
+	if availableGapSpace >= 0 then
+		gui.StealCardContainer.UIListLayout.Padding = UDim.new(0, 0)
+	else
+		local paddingPerGap = availableGapSpace / ((#gui.StealCardContainer:GetChildren() - 1) - 1)
+
+		--tweenService:Create(listLayout, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Padding = UDim.new(0, paddingPerGap)}):Play()
+		gui.StealCardContainer.UIListLayout.Padding = UDim.new(0, paddingPerGap)
+	end
+end
+
 function addCard(card:string | {string})
 	if typeof(card) == "table" then
 		for i, cardString in pairs(card) do
@@ -443,14 +516,17 @@ function addCard(card:string | {string})
 		newCard.Icon.BackgroundColor3 = cardInfo[card]["Colour"]
 		newCard.Icon.ImageTransparency = 1
 	end
+	
+	cards[#cards + 1] = newCard
 
 	newCard.LayoutOrder = #cards * 10
 	newCard.ZIndex = #cards * 10
 	newCard.Visible = true
 	newCard.Name = card
 	newCard.UIAspectRatioConstraint.AspectRatio = 0.1
-
-	cards[#cards + 1] = newCard
+	newCard.Icon.InputSink = Enum.InputSink.All
+	newCard.Icon.UIDragDetector.Enabled = decision ~= "Awaiting"
+	newCard.Icon.Active = decision == "Awaiting"
 
 	newCard.Parent = cardContainer
 	
@@ -686,18 +762,11 @@ cardActions.Steal.Activated:Connect(function()
 	end
 end)
 
-function hoverCard(card:Frame)
-	print("Hovering " .. card.Name)
-	
-	local icon = card:FindFirstChild("Icon")::ImageButton
-	if not icon then return end
-	
-	tweenService:Create(icon, TweenInfo.new(0.05, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.125)}):Play()
-end
-
 function terminateDecision()
 	decision = nil
 	gui.TakeCard.Visible = false
+	
+	workspace.Camera.CameraType = Enum.CameraType.Custom
 	
 	tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, -0.25)}):Play()
 	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
@@ -709,8 +778,18 @@ replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClient
 	antiInactivityCountdown = 20
 	decision = "Awaiting"
 	
+	for i, child in ipairs(gui.StealCardContainer:GetChildren()) do
+		if not child:IsA("Frame") then continue end
+			
+		child:Destroy()
+	end
+	
 	if DecisionType == "Take" then
 		gui.TakeCard.Visible = true
+		
+		workspace.Camera.CameraType = Enum.CameraType.Scriptable
+		
+		
 
 		activateCards(true)
 	elseif DecisionType == "Steal" then
@@ -723,6 +802,8 @@ replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClient
 			newCard.LayoutOrder = count
 			newCard.ZIndex = count
 			newCard.Visible = true
+			newCard.Icon.InputSink = Enum.InputSink.All
+			newCard.Icon.UIDragDetector:Destroy()
 			newCard.Name = tostring(count)
 			
 			newCard.Parent = gui.StealCardContainer
@@ -732,11 +813,19 @@ replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClient
 					decision = count
 				end
 			end)
+
+			local t = Data1 > 1 and (count - (Data1 + 1) / 2) / ((Data1 - 1) / 2) or 0
+
+			local rotation = t * 7.5
+			local yOffset = (t * t) * 0.2
+			
+			newCard.Icon.Position = UDim2.fromScale(0.5, 0.5 - yOffset)
+			newCard.Icon.Rotation = -rotation
 		end
 		
-		print("Goott")
+		updateStealScaling()
 		
-		tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.25)}):Play()
+		tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.33)}):Play()
 		tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 1.25)}):Play()
 		
 		activateCards(false)
