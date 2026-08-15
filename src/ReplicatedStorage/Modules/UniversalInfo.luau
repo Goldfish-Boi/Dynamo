@@ -1,6 +1,14 @@
 const univeralInfo = table.freeze({
 	["Assets"] = {
 		["BotIcon"] = 80798742429722,
+		["CreditsIcon"] = 102613548895060,
+		["InventoryIcons"] = 118527666077611,
+		["SettingsIcon"] = 112253145024380,
+		["ShopIcon"] = 81498360874929,
+		["UseCard"] = 79198124246515,
+		["UseMultiple"] = 111205238211518,
+		["Steal"] = 128373938608239,
+		["TripleSteal"] = 122601748489333,
 	},
 	["Explosions"] = {
 		["E001"] = {
