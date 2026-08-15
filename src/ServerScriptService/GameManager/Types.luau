@@ -16,7 +16,7 @@ export type TripleStealAction = {
 	Type: "Triple Steal",
 	TargetIndex: number,
 	Cards: {string},
-	RequestedCard: string,
+	--RequestedCard: string,
 }
 
 export type ActionInfo = StealAction | TripleStealAction
