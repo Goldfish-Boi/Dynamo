@@ -34,7 +34,7 @@ local intermissionLength:number = 0
 local bombDutyCountdownLength:number = 0
 local usedCardCount:number = 0
 
-local botCountOverride:number? = 15
+local botCountOverride:number? = nil
 local initialDeckSize:number?
 local roundTime:number?
 
@@ -257,12 +257,13 @@ function setPillars()
 
 		if not player.Character then return end
 		
-		local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-		local humanoidRootPart:BasePart = player.Character:FindFirstChild("HumanoidRootPart")::BasePart
+		local humanoid = player.Character:FindFirstChildOfClass("Humanoid")::Humanoid?
+		local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")::BasePart?
 
 		if (not humanoidRootPart) or (not humanoid) then return end
 		
 		humanoid.PlatformStand = true
+		humanoid.JumpHeight = 0
 		humanoidRootPart.CFrame = pillar.PlayerSpawn.CFrame
 		humanoidRootPart.Anchored = true
 
