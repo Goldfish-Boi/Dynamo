@@ -5,9 +5,11 @@ local contentProvider = game:GetService("ContentProvider")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local cardInfo:{[string]:{[string]:any}} = require(replicatedStorage.Modules.CardInfo)::{[string]:any}
-local assets = {}
+local universalInfo:{[string]:{[string]:any}} = require(replicatedStorage.Modules.UniversalInfo)::{[string]:any}
 
-for card, cardData in pairs(cardInfo) do
+local assets:{ImageLabel|Decal} = {}
+
+for i, cardData in pairs(cardInfo) do
 	if not cardData["IconID"] then continue end
 	if typeof(cardData["IconID"]) ~= "number" then continue end
 	
@@ -21,10 +23,21 @@ for card, cardData in pairs(cardInfo) do
 	table.insert(assets, decal)
 end
 
+for assetName, id in pairs(universalInfo["Assets"]) do
+	local imageLabel = Instance.new("ImageLabel")
+	imageLabel.Image = "rbxassetid://" .. id
+
+	local decal = Instance.new("Decal")
+	decal.ColorMap = "rbxassetid://" .. id
+
+	table.insert(assets, imageLabel)
+	table.insert(assets, decal)
+end
+
 contentProvider:PreloadAsync(assets)
 
 for i, item in ipairs(assets::{Instance}) do
 	item:Destroy()
 end
 
-assets = nil
+assets = {}
