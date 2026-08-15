@@ -20,7 +20,7 @@ const cards = table.freeze({
 	{Name = "Taco", ChancePerPlr = 100},
 	{Name = "Choco Milk", ChancePerPlr = 100},
 	{Name = "Request", ChancePerPlr = 125},
-	{Name = "Deny", ChancePerPlr = 125},
+	{Name = "Deny", ChancePerPlr = 120},
 	{Name = "Analyse", ChancePerPlr = 80},
 	{Name = "Expose", ChancePerPlr = 33},
 	{Name = "Reverse", ChancePerPlr = 75},
@@ -215,7 +215,7 @@ function deckManager.CreatePlayerDecks(numberOfPlayers:number)
 	for i = 1, numberOfPlayers do
 		playerDecks[i] = {}
 		
-		for j = 1, 7 do
+		for j = 1, 10 do
 			local n = math.random(1, #initialDeck)
 			
 			playerDecks[i][j] = initialDeck[n]
