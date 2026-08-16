@@ -30,6 +30,35 @@ function helpers.copyTable<T>(t: T): T
 	return copy :: T
 end
 
+function helpers.getAllOthers(index:number) : {string}
+	if not helpers.getPlayerTable then return {} end
+	
+	local playerTable = helpers.getPlayerTable()
+	
+	if not playerTable then return {} end
+	
+	local plr = playerTable[index]
+	local others = {}
+	
+	for i, playerName in ipairs(playerTable) do
+		if playerName == plr then continue end
+		
+		table.insert(others, playerName)
+	end
+	
+	return others
+end
+
+function helpers.getPlayerIndex(playerName:string) : number
+	if not helpers.getPlayerTable then return -1 end
+	
+	local index = table.find(helpers.getPlayerTable(), playerName)
+	
+	if not index then return 0 end
+	
+	return index
+end
+
 function helpers.isPlayer(index: number): (boolean, Player?)
 	if not helpers.getPlayerTable then return false, nil end
 
