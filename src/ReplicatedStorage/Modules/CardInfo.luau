@@ -304,7 +304,7 @@ const cardInfo = table.freeze({
 	},
 	["Nuke"] = {
 		Colour = Color3.fromRGB(64, 66, 111),
-		IconID = nil,
+		IconID = 118923559882263,
 		DeckDescription = "How do you even have this 🥀💔",
 		InfoOverrideDescription = "Place back in the deck face up when drawn face down. Eliminates immediately when drawn face up",
 		MenuDescription = "Ok seriously WHY DO WE HAVE THESE???",
