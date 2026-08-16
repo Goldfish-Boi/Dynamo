@@ -57,6 +57,8 @@ export type Helpers = {
 
 	copyTable: <T>(t:T) -> T,
 	isPlayer: (number) -> (boolean, Player?),
+	getAllOthers: (number) -> {string},
+	getPlayerIndex: (string) -> number,
 	setProviders: (provider:() -> {string}, provider2:() -> {Model}, provider3:() -> {string}, provider4:() -> array<{string}>) -> (),
 }
 
