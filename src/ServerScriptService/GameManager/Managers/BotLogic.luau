@@ -6,6 +6,21 @@ local botLogic = {}
 local cardInfo:{[string]: any}  = require(game.ReplicatedStorage.Modules.CardInfo)::{[string]: any}
 local deckManager = require(script.Parent.Parent.Managers.DeckManager)
 
+local helpers = require(script.Parent.Parent.Helpers)
+local stealModule = require(script.Parent.Parent.ActionModules.Steal)
+
+function getSpecificCardCount(card:string, hand:{string}) : number
+	local cardCount = 0
+	
+	for i, card in ipairs(hand) do
+		if card == card then
+			cardCount += 1
+		end
+	end
+	
+	return cardCount
+end
+
 function computeRisk(hand:{string}, plrCount:number) : number
 	if (not deckManager.InitialDeck) or (not deckManager.CurrentDeck) then return math.random(1, 100) end
 	
@@ -91,7 +106,44 @@ function botLogic.playCard(bot:Instance, deck:{string}, plrCount:number) : strin
 end
 
 function botLogic.Play(bot:Instance, hand:{string}, plrCount:number) : string
-	if math.random(1, 100) >= computeRisk(hand, plrCount) then
+	if not helpers.getPlrCardsProvider then return "Take" end
+	
+	local canSteal:boolean = false
+	local canTripleSteal:boolean = false
+	
+	local steals = {}
+	local tripleSteals = {}
+	
+	if #hand ~= 0 then
+		local cardsChecked:{string} = {}
+		
+		for i, card in ipairs(hand) do
+			if table.find(cardsChecked, card) then continue end
+			
+			table.insert(cardsChecked, card)
+			
+			local specificCardCount = getSpecificCardCount(card, hand)
+			
+			if specificCardCount >= 2 then
+				table.insert(steals, card)
+				
+				if specificCardCount >= 3 then
+					table.insert(tripleSteals, card)
+				end
+			end
+		end
+	end
+	
+	local plrCards = helpers.getPlrCardsProvider()
+	local otherPlayers:{string} = helpers.getAllOthers(helpers.getPlayerIndex(bot.Name))
+	
+	if math.random(1, 100) >= computeRisk(hand, plrCount) and #hand ~= 0 then
+		--[[if #steals ~= 0 and plrCards then
+			local cardToUse = steals[math.random(1, #steals)]
+			
+			stealModule.Steal(helpers.getPlayerIndex(bot.Name), {Type = "Steal", TargetIndex = helpers.getPlayerIndex(otherPlayers[math.random(1, #otherPlayers)]), Cards = {cardToUse, cardToUse}})
+		end]]--
+		
 		return "Play"
 	else
 		return "Take"
