@@ -7,6 +7,7 @@ local userInputService = game:GetService("UserInputService")
 local debris = game:GetService("Debris")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
+local require = require
 local cardInfo:{[string]:any} = require(replicatedStorage.Modules.CardInfo)::{[string]:any}
 local universalInfo:{[string]:any} = require(replicatedStorage.Modules.UniversalInfo)::{[string]:any}
 
@@ -42,14 +43,14 @@ listLayout.HorizontalFlex = Enum.UIFlexAlignment.SpaceEvenly
 
 -------------------------------------- Helper Functions --------------------------------------
 
-function findfirstcard(name) : (number?, Frame?)
+function findFirstCard(name:string) : (number?, Frame?)
 	local index = nil
 	local object = nil
 	
-	for i, obj in cards do
-		if obj.Name == name then
+	for i, card in ipairs(cards) do
+		if card.Name == name then
 			index = i
-			object = obj
+			object = card
 			break
 		end
 	end
@@ -245,11 +246,47 @@ end
 
 -------------------------------------- Primary Functions --------------------------------------
 
+function updateCardDescription(card:Frame?)
+	if not card then
+		tweenService:Create(cardDescription, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 1}):Play()
+		tweenService:Create(cardDescription.Title, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {TextTransparency = 1}):Play()
+		tweenService:Create(cardDescription.Title.UIStroke, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Transparency = 1}):Play()
+		tweenService:Create(cardDescription.Description, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {TextTransparency = 1}):Play()
+		
+		return
+	end
+	
+	local colour = cardInfo[card.Name]["Colour"]::Color3
+	local h, s, v = colour:ToHSV()
+	
+	local highlightColor = Color3.new(if v >= 0.5 then 0 else 1, if v >= 0.5 then 0 else 1, if v >= 0.5 then 0 else 1)
+	
+	cardDescription.Title.Text = card.Name
+	cardDescription.Title.TextColor3 = colour
+	cardDescription.Title.UIStroke.Color = highlightColor
+	cardDescription.Description.Text = cardInfo[card.Name]["DeckDescription"]
+	
+	tweenService:Create(cardDescription, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.5}):Play()
+	tweenService:Create(cardDescription.Title, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {TextTransparency = 0}):Play()
+	tweenService:Create(cardDescription.Description, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {TextTransparency = 0}):Play()
+	tweenService:Create(cardDescription.Title.UIStroke, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Transparency = 0}):Play()
+end
+
 function hoverCard(card:Frame, hovering:boolean)
 	local rest = cardRestState[card] or {rotation = 0, yOffset = 0}
-	local icon:ImageButton = card:FindFirstChild("Icon")::ImageButton
+	local icon:ImageButton? = card:FindFirstChild("Icon")::ImageButton?
+	
+	if not icon then return end
 	
 	tweenService:Create(icon, TweenInfo.new(0.125, Enum.EasingStyle.Back, Enum.EasingDirection.Out), if hovering then {Position = UDim2.fromScale(0.5, math.max(0.5 + rest.yOffset - 0.375, 0)), Rotation = 0} else {Position = UDim2.fromScale(0.5, 0.5 + rest.yOffset), Rotation = rest.rotation}):Play()
+end
+
+function pickPlayer():string
+	workspace.Camera.CameraType = Enum.CameraType.Custom
+	
+	tweenService:Create(workspace.Camera, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = workspace.Origin.CFrame * CFrame.new(0, 100, 0)}):Play()
+	
+	return "Bot 1"
 end
 
 function addCardFunctionality(card:Frame)
@@ -282,6 +319,7 @@ function addCardFunctionality(card:Frame)
 		
 		hoveredCard = card
 		
+		updateCardDescription(card)
 		hoverCard(card, true)
 	end)
 
@@ -292,6 +330,7 @@ function addCardFunctionality(card:Frame)
 			hoveredCard = nil
 		end
 		
+		updateCardDescription(nil)
 		hoverCard(card, false)
 	end)
 
@@ -404,7 +443,7 @@ function addCardFunctionality(card:Frame)
 		
 		if dragConnection then
 			dragConnection:Disconnect()
-			dragConnection = nil -- clear this BEFORE updateCardArc, or it'll skip every card
+			dragConnection = nil
 		end
 
 		if n then
@@ -811,6 +850,10 @@ replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClient
 			newCard.Icon.Activated:Connect(function()
 				if decision == "Awaiting" then
 					decision = count
+					
+					task.delay(0.1, function()
+						decision = "Awaiting"
+					end)
 				end
 			end)
 
@@ -906,13 +949,41 @@ cardActions.Steal:GetPropertyChangedSignal("Visible"):Connect(function()
 	end
 end)
 
-replicatedStorage.Communicators.Remotes.Events.OrderClientAction.OnClientEvent:Connect(function(Action:string, Target:string|{string})
+replicatedStorage.Communicators.Remotes.Events.PlayerEliminated.OnClientEvent:Connect(function(pillarToDestroy:Model)
+	local explosionModule = pillarToDestroy:FindFirstChildWhichIsA("ModuleScript", true)
+	
+	if explosionModule then
+		require(explosionModule)()
+	end
+end)
+
+replicatedStorage.Communicators.Remotes.Events.OrderClientAction.OnClientEvent:Connect(function(Action:string, Target:string|{string}?, index:number?)
 	if Action == "RemoveFirst" then
-		local indexToRemove = findfirstcard(Target)
+		if not Target then return end
+		
+		if typeof(Target) == "table" then
+			for i, card in Target do
+				local indexToRemove = findFirstCard(card)
+				if not indexToRemove then continue end
+				
+				removeCard(indexToRemove)
+			end
+			
+			return
+		end
+		
+		local indexToRemove = findFirstCard(Target)
 		if not indexToRemove then return end
 		
 		removeCard(indexToRemove)
+	elseif Action == "RemoveCard" then
+		if not index then return end
+		
+		removeCard(index)
+		updateScaling()
 	elseif Action == "AddCard" then
+		if not Target then return end
+		
 		addCard(Target)
 	end
 end)
