@@ -33,8 +33,18 @@ function copyTable(t:{any}) : {[any]:any}
 end
 
 function dataModule.returnPlayerData(plr:Player, returnType:string) : {[string]:any} | string
-	--local currentData = stitchData(plr.UserId)
+	local attempts = 0
+	
+	repeat
+		attempts += 1
+		task.wait(0.1)
+	until tablePlayerData[plr.UserId] or attempts == 100
+	
 	local currentData = tablePlayerData[plr.UserId]
+	
+	if not currentData then 
+		return "Error"
+	end
 	
 	if returnType == "All" then
 		return currentData
