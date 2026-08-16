@@ -240,6 +240,9 @@ function setPillars()
 
 		pillar.Parent = pillarsFolder
 		
+		local explosionModule = serverStorage.ServerAssets.ExplosionModules.Explosion:Clone()
+		explosionModule.Parent = pillar
+		
 		if not isaPlayer then
 			local bot = replicatedStorage.Assets.Round.Bot:Clone()
 			bot.Name = playerName
@@ -496,6 +499,7 @@ function eliminatePlayer(index:number, leaving:boolean?)
 	local isaPlayer, player = helpers.isPlayer(index)
 	local pillarToDestroy
 	
+	replicatedStorage.Communicators.Remotes.Events.PlayerEliminated:FireAllClients(pillarsTable[index])
 	
 	if not isaPlayer then
 		pillarToDestroy = pillarsFolder:FindFirstChild(playerName)
@@ -508,18 +512,20 @@ function eliminatePlayer(index:number, leaving:boolean?)
 		pillarToDestroy = pillarsFolder:FindFirstChild(playerName)
 		
 		if player then
-			replicatedStorage.Communicators.Remotes.Events.TransitionWithRound:FireClient(player)
+			task.delay(3, function()
+				replicatedStorage.Communicators.Remotes.Events.TransitionWithRound:FireClient(player)
 
-			player:LoadCharacterAsync()
+				player:LoadCharacterAsync()
+			end)
 		end
 	end
 
-	if pillarToDestroy then
+	--[[if pillarToDestroy then
 		local explosionModule = pillarToDestroy:WaitForChild("ExplosionModule")::Instance
 		if explosionModule and explosionModule:IsA("ModuleScript") then
 			require(explosionModule).explode()
 		end
-	end
+	end]]--
 	
 	updatePlayerStatus(index, if leaving then "Disconnected" else "Off Duty")
 
@@ -1013,7 +1019,7 @@ function gameLoop()
 		
 		if numberOfBots ~= 0 then
 			for i = 1, numberOfBots do
-				table.insert(playerTable, "Bot" .. i)
+				table.insert(playerTable, "Bot " .. i)
 			end
 		end
 		
