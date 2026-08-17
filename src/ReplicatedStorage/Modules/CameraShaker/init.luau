@@ -20,7 +20,7 @@
 	
 	EXAMPLE:
 	
-		local camShake = CameraShaker.new(Enum.RenderPriority.Camera.Value, function(shakeCFrame)0
+		local camShake = CameraShaker.new(Enum.RenderPriority.Camera.Value, function(shakeCFrame)
 			camera.CFrame = playerCFrame * shakeCFrame
 		end)
 		
