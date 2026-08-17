@@ -6,6 +6,8 @@ local module = {}
 local tweenService = game:GetService("TweenService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
+local menuData = require(script.Parent.MenuDataManager)
+
 local gui = script.Parent.Parent.Parent
 local holder = gui.Holder
 local buttons = holder.Buttons
@@ -17,11 +19,15 @@ local inventoryTemplates = uiTemplates.InventoryTemplates
 local active:boolean = false
 local currentTab:string = "Pillars"
 
-local playerData:any?
+local playerData:{[string]:any}? = nil
 local auxillary:Frame?
 local tabs:Frame?
 
 ---------------------------------- Helper Functions ----------------------------------
+
+function updateData()
+	playerData = menuData.PlayerData
+end
 
 function addFunctionality()
 	if not tabs then return end
