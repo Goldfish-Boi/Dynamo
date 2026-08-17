@@ -17,24 +17,24 @@ local open = false
 local debounce = false
 local currentMenu = "Main"
 
-local playerData = nil
+--local playerData:{[string]:any}? = nil
 local background:ScreenGui? = nil
 
 local originalValues = {}
 local managers = {}
 
-local topBarPlus = require(replicatedStorage.Modules.Icon)
-managers["MenuDataManager"] = require(script.MenuManagers.MenuDataManager)
+--local topBarPlus = require(replicatedStorage.Modules.Icon)
+
 managers["CreditsManager"] = require(script.MenuManagers.CreditsManager)
 managers["InventoryManager"] = require(script.MenuManagers.InventoryManager)
 managers["SettingsManager"] = require(script.MenuManagers.SettingsManager)
 managers["ShopManager"] = require(script.MenuManagers.ShopManager)
 
+local menuDataManager = require(script.MenuManagers.MenuDataManager)
+
 --------------------------------------- Helper Functions ---------------------------------------
 
-playerData = replicatedStorage.Communicators.Remotes.Functions.RequestData:InvokeServer("All")
 
-print(playerData)
 
 --------------------------------------- Main Functions ---------------------------------------
 
@@ -290,46 +290,28 @@ function init()
 	end)
 end
 
---------------------------------------- Connections ---------------------------------------
-
-local nitroIcon = topBarPlus.new()
-	:setName("Nitro")
-	--:setLabel("0")
-	:setImage(92231235191960)
-	:align("Left")
-	--:setCaption("You have 0 Nitro")
-	--:setWidth(88)
-	
-if playerData then
-	if playerData["Inventory"]["Nitro"] then
-		nitroIcon:setLabel(tostring(playerData["Inventory"]["Nitro"])):setCaption("You have " .. tostring(playerData["Inventory"]["Nitro"]) .. " Nitro")
-	end
-end
-
-replicatedStorage.Communicators.Remotes.Events.PlayerDataUpdated.OnClientEvent:Connect(function(data)
-	playerData = data
-	
-	if playerData["Inventory"]["Nitro"] then
-		nitroIcon:setLabel(tostring(playerData["Inventory"]["Nitro"])):setCaption("You have " .. tostring(playerData["Inventory"]["Nitro"]) .. " Nitro")
-	end
-end)
-
-replicatedStorage.Communicators.Remotes.Events.TransitionWithRound.OnClientEvent:Connect(function()
+function removeEntireMenu()
 	debounce = true
-	
+
 	setMenuState(false)
-	
+
 	task.delay(3, function()
 		debounce = false
 	end)
-	
+
 	local n = if openCloseButton.Visible == true then 0 else 0.1
-	
+
 	tweenService:Create(openCloseButton, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromScale(n, n)}):Play()
-	
+
 	task.wait(if openCloseButton.Visible == true then 0.5 else 0)
-	
+
 	openCloseButton.Visible = not openCloseButton.Visible
+end
+
+--------------------------------------- Connections ---------------------------------------
+
+replicatedStorage.Communicators.Remotes.Events.TransitionWithRound.OnClientEvent:Connect(function()
+	removeEntireMenu()
 end)
 
 init()
