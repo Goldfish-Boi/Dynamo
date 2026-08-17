@@ -34,7 +34,14 @@ local CameraShakePresets = {
 	-- An intense and rough shake.
 	-- Should happen once.
 	Explosion = function()
-		local c = CameraShakeInstance.new(5, 10, 0, 1.5)
+		local c = CameraShakeInstance.new(3, 5, 0, 1.5)
+		c.PositionInfluence = Vector3.new(0.25, 0.25, 0.25)
+		c.RotationInfluence = Vector3.new(4, 1, 1)
+		return c
+	end;
+	
+	ClassicExplosion = function()
+		local c = CameraShakeInstance.new(2, 3, 0, 1.5)
 		c.PositionInfluence = Vector3.new(0.25, 0.25, 0.25)
 		c.RotationInfluence = Vector3.new(4, 1, 1)
 		return c
