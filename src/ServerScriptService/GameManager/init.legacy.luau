@@ -30,7 +30,7 @@ local circleTemplate = mainScreen.SurfaceGui.Circles.CircleTemplate
 local playerStatus = workspace.Lobby.ServerDataSigns.PlayerStatuses
 
 local currentTurnIndex:number = 0
-local intermissionLength:number = 0
+local intermissionLength:number = 10
 local bombDutyCountdownLength:number = 0
 local usedCardCount:number = 0
 
@@ -119,19 +119,21 @@ function removePlayerFromTable(index:number)
 	end
 	
 	if plrCards[index] then
-		local primary = pillarsTable[index].PrimaryPart
+		if pillarsTable[index] then
+			local primary = pillarsTable[index].PrimaryPart
 
-		if primary then
-			for i, card in ipairs(plrCards[index]) do
-				task.spawn(function()
-					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
-					
-					task.wait(1.5)
-					
-					setUsedCardsModel({card})
-				end)
-				
-				task.wait(0.125)
+			if primary then
+				for i, card in ipairs(plrCards[index]) do
+					task.spawn(function()
+						transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+
+						task.wait(1.5)
+
+						setUsedCardsModel({card})
+					end)
+
+					task.wait(0.125)
+				end
 			end
 		end
 				
