@@ -27,9 +27,11 @@ function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 		if not success then
 			print("Disconnected")
 			return
+		else
+			print(stealIndex)
 		end
 		
-		if typeof(stealIndex) == "string" then
+		if typeof(stealIndex) == "string" or stealIndex == -1 then
 			print("AFK while stealing")
 			return
 		end
