@@ -19,11 +19,11 @@ const cards = table.freeze({
 	{Name = "Cake", ChancePerPlr = 100},
 	{Name = "Taco", ChancePerPlr = 100},
 	{Name = "Choco Milk", ChancePerPlr = 100},
-	{Name = "Request", ChancePerPlr = 125},
-	{Name = "Deny", ChancePerPlr = 120},
-	{Name = "Analyse", ChancePerPlr = 80},
-	{Name = "Expose", ChancePerPlr = 33},
-	{Name = "Reverse", ChancePerPlr = 75},
+	--{Name = "Request", ChancePerPlr = 125},
+	--{Name = "Deny", ChancePerPlr = 120},
+	--{Name = "Analyse", ChancePerPlr = 80},
+	--{Name = "Expose", ChancePerPlr = 33},
+	--{Name = "Reverse", ChancePerPlr = 75},
 	--[[{Name = "Ploobie", Amount = 2},
 	{Name = "Draw from the bottom", Amount = 1},
 	{Name = "Invert", Amount = 1},
@@ -33,15 +33,15 @@ const cards = table.freeze({
 })
 
 const variableCards = table.freeze({
-	{Name = "Skip", ChancePerPlr = 100, CanBecome = {"Ultra Skip"}, Chance = {20}},
+	{Name = "Skip", ChancePerPlr = 1000, CanBecome = {"Ultra Skip"}, Chance = {20}},
 	{Name = "Attack", ChancePerPlr = 100, CanBecome = {"Targeted Attack"}, Chance = {33}},
-	{Name = "Peek", ChancePerPlr = 100, CanBecome = {"Adjust"}, Chance = {50}},
+	--{Name = "Peek", ChancePerPlr = 100, CanBecome = {"Adjust"}, Chance = {50}},
 })
 
 const nonStartingCards = table.freeze({
 	{Name = "Containment", ChancePerPlr = 7.5},
 	{Name = "Defuse", ChancePerPlr = 33},
-	{Name = "Nuke", ChancePerPlr = 4},
+	--{Name = "Nuke", ChancePerPlr = 4},
 	{Name = "Doomsday", ChancePerPlr = 2},
 	{Name = "Ploobie", ChancePerPlr = 0.5},
 	--{Name = "Noclip", Amount = 1},
@@ -215,7 +215,7 @@ function deckManager.CreatePlayerDecks(numberOfPlayers:number)
 	for i = 1, numberOfPlayers do
 		playerDecks[i] = {}
 		
-		for j = 1, 10 do
+		for j = 1, 7 do
 			local n = math.random(1, #initialDeck)
 			
 			playerDecks[i][j] = initialDeck[n]
