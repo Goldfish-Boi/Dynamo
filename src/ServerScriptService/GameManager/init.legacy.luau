@@ -30,7 +30,7 @@ local circleTemplate = mainScreen.SurfaceGui.Circles.CircleTemplate
 local playerStatus = workspace.Lobby.ServerDataSigns.PlayerStatuses
 
 local currentTurnIndex:number = 0
-local intermissionLength:number = 10
+local intermissionLength:number = 0
 local bombDutyCountdownLength:number = 0
 local usedCardCount:number = 0
 
