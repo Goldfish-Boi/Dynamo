@@ -17,24 +17,28 @@ local listLayout = cardContainer.UIListLayout
 local containerAbsSize = cardContainer.AbsoluteSize.X
 local containerAbsPos = cardContainer.AbsolutePosition.X
 local cardDescription = gui.CardDescription
-local takeCard = gui.TakeCard
 local cardActions = gui.CardActions
 local sounds = script.Sounds
 
-local dragTarget:UDim2?
-local decision:string|{string}|number?
-
 --local cardCount:number = 0
 local debounce:boolean = false
+local haltCountDown = false
 local hoveredCard:Frame? = nil
 local antiInactivityCountdown:number = 20
+local actionInactivityCountdown:number = 20
 
 local cardRestState:{[Frame] : {rotation:number, yOffset:number}} = {}
 local cards:{Frame} = {}
 local cardsSelected:{Frame} = {}
 
+local dragTarget:UDim2?
+local decision:string|{string}|number?
+local action:(number | string)?
+
+local originalCameraCFrame:CFrame? = nil
 local dragConnection:RBXScriptConnection?
 local countdownThread:thread
+local actionCountdownThread:thread
 
 ---------------------------------------------------------------------------------------------
 
@@ -179,11 +183,17 @@ function updateCardActions(card:Frame?)
 		if #cardsSelected > 0 then
 			if not cardActions.Use.Visible then
 				cardActions.Use.Size = UDim2.fromScale(0.001, 1)
-			end
-			
-			cardActions.Use.Visible = true
+				
+				if (cardActions.Take.Visible and cardActions.Steal.Visible) or (not cardActions.Take.Visible) and (not cardActions.Steal.Visible) then
+					cardActions.Use.Position = UDim2.fromScale(0.5, 0.5)
+				elseif (cardActions.Take.Visible and not cardActions.Steal.Visible) or (not cardActions.Take.Visible and cardActions.Steal.Visible) then
+					cardActions.Use.Position = UDim2.fromScale(0.7, 0.5)
+				end
+				
+				cardActions.Use.Visible = true
 
-			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.333, 1)}):Play()
+				tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.333, 1)}):Play()
+			end
 		else
 			if cardActions.Use.Visible then
 				task.spawn(function()
@@ -208,6 +218,14 @@ function updateCardActions(card:Frame?)
 	if #cardsSelected >= 2 then
 		if not cardActions.Steal.Visible then
 			cardActions.Steal.Size = UDim2.fromScale(0.001, 1)
+			
+			if cardActions.Take.Visible and cardActions.Use.Visible then
+				cardActions.Steal.Position = UDim2.fromScale(1, 0.5)
+			elseif (cardActions.Take.Visible and not cardActions.Use.Visible) or (not cardActions.Take.Visible and cardActions.Use.Visible) then
+				cardActions.Steal.Position = UDim2.fromScale(0.7, 0.5)
+			elseif (not cardActions.Take.Visible) and (not cardActions.Use.Visible) then
+				cardActions.Steal.Position = UDim2.fromScale(0.5, 0.5)
+			end
 			
 			cardActions.Steal.Visible = true
 			
@@ -716,12 +734,12 @@ function deselectAllCards(silent:boolean?, hideSound:boolean?)
 	updateCardActions(nil)
 end
 
-takeCard.Activated:Connect(function()
+cardActions.Take.Activated:Connect(function()
 	if debounce then return end
 	
 	debounce = true
 	
-	takeCard.Visible = false
+	enableTaking(false)
 	
 	antiInactivityCountdown = 20
 	
@@ -754,7 +772,7 @@ cardActions.Use.Activated:Connect(function()
 			removeCard(indexToRemove)
 		end
 		
-		takeCard.Visible = false
+		enableTaking(false)
 		
 		antiInactivityCountdown = 20
 		
@@ -803,116 +821,220 @@ end)
 
 function terminateDecision()
 	decision = nil
-	gui.TakeCard.Visible = false
+	enableTaking(false)
 	
-	workspace.Camera.CameraType = Enum.CameraType.Custom
-	
-	tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, -0.25)}):Play()
-	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
+	if workspace.Camera.CameraType == Enum.CameraType.Scriptable then
+		task.delay(0.5, function()
+			workspace.Camera.CameraType = Enum.CameraType.Custom
+		end)
+		
+		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
+	end
 
 	deselectAllCards()
 end
 
-replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClientInvoke = function(DecisionType:string, Data1:number) : string | {string} | number
+function terminateAction()
+	action = nil
+	haltCountDown = false
+	
+	if decision == "Awaiting" then
+		enableTaking(true)
+		activateCards(true)
+
+		local topMostCard  = workspace.Round.Cards.Deck:FindFirstChild(tostring(#workspace.Round.Cards.Deck:GetChildren()))::BasePart
+
+		if topMostCard then
+			tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = CFrame.new(topMostCard.Position) * CFrame.new(0, 15, -15) * CFrame.Angles(0, math.rad(180), 0) * CFrame.Angles(math.rad(-60), 0, 0)}):Play()
+		end
+	else
+		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
+	end
+	
+	
+	tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, -0.25)}):Play()
+	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
+end
+
+function enableTaking(enabled:boolean)
+	print(enabled)
+	
+	if enabled then
+		if not cardActions.Take.Visible then
+			cardActions.Take.Size = UDim2.fromScale(0.001, 1)
+		end
+		
+		if cardActions.Use.Visible and cardActions.Steal.Visible then
+			cardActions.Take.Position = UDim2.fromScale(0, 0.5)
+		elseif (cardActions.Use.Visible and not cardActions.Steal.Visible) or (not cardActions.Use.Visible and cardActions.Steal.Visible) then
+			cardActions.Take.Position = UDim2.fromScale(0.3, 0.5)
+		elseif (not cardActions.Use.Visible) and (not cardActions.Steal.Visible) then
+			cardActions.Take.Position = UDim2.fromScale(0.5, 0.5)
+		end
+		
+		cardActions.Take.Visible = true
+		
+		tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.333, 1)}):Play()
+	else
+		if cardActions.Take.Visible then
+			task.spawn(function()
+				tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.fromScale(0.001, 1)}):Play()
+
+				task.wait(0.25)
+
+				cardActions.Take.Visible = false
+			end)
+		end
+	end
+end
+
+function decisionTake() : string | {string}
 	antiInactivityCountdown = 20
 	decision = "Awaiting"
 	
-	for i, child in ipairs(gui.StealCardContainer:GetChildren()) do
-		if not child:IsA("Frame") then continue end
-			
-		child:Destroy()
-	end
-	
-	if DecisionType == "Take" then
-		gui.TakeCard.Visible = true
-		
+	enableTaking(true)
+
+	local topMostCard  = workspace.Round.Cards.Deck:FindFirstChild(tostring(#workspace.Round.Cards.Deck:GetChildren()))::BasePart
+
+	if topMostCard then
 		workspace.Camera.CameraType = Enum.CameraType.Scriptable
-		
-		
 
-		activateCards(true)
-	elseif DecisionType == "Steal" then
-		gui.TakeCard.Visible = false
-		
-		for count = 1, Data1 do
-			local newCard = script.CardTemplate:Clone()
+		originalCameraCFrame = workspace.Camera.CFrame
 
-			newCard.Icon.Image = "rbxassetid://" .. cardInfo["CardBack"]["IconID"]
-			newCard.LayoutOrder = count
-			newCard.ZIndex = count
-			newCard.Visible = true
-			newCard.Icon.InputSink = Enum.InputSink.All
-			newCard.Icon.UIDragDetector:Destroy()
-			newCard.Name = tostring(count)
-			
-			newCard.Parent = gui.StealCardContainer
-			
-			newCard.Icon.Activated:Connect(function()
-				if decision == "Awaiting" then
-					decision = count
-					
-					task.delay(0.1, function()
-						decision = "Awaiting"
-					end)
-				end
-			end)
-
-			local t = Data1 > 1 and (count - (Data1 + 1) / 2) / ((Data1 - 1) / 2) or 0
-
-			local rotation = t * 7.5
-			local yOffset = (t * t) * 0.2
-			
-			newCard.Icon.Position = UDim2.fromScale(0.5, 0.5 - yOffset)
-			newCard.Icon.Rotation = -rotation
-		end
-		
-		updateStealScaling()
-		
-		tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.33)}):Play()
-		tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 1.25)}):Play()
-		
-		activateCards(false)
+		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = CFrame.new(topMostCard.Position) * CFrame.new(0, 15, -15) * CFrame.Angles(0, math.rad(180), 0) * CFrame.Angles(math.rad(-60), 0, 0)}):Play()
 	end
+
+	activateCards(true)
 	
 	if countdownThread then
 		coroutine.close(countdownThread)
 	end
-	
+
 	countdownThread = task.spawn(function()
 		while task.wait(1) do
 			if antiInactivityCountdown == 0 then
 				break
-			else
+			elseif not haltCountDown then
 				antiInactivityCountdown -= 1
 			end
 		end
 	end)
-	
+
 	while task.wait() do
 		if decision and decision ~= "Awaiting" then
 			print(decision)
-			
+
 			task.defer(function()
 				terminateDecision()
 			end)
-			
+
 			return decision
 		end
-		
+
 		if antiInactivityCountdown == 0 then
 			task.defer(function()
 				terminateDecision()
 			end)
-			
+
 			return "AFK"
 		end
 	end
-	
+
 	task.defer(function()
 		terminateDecision()
 	end)
-	
+
 	return "AFK"
+end
+
+function decisionSteal(cardCount:number) : number | string
+	action = "Awaiting"
+	actionInactivityCountdown = 20
+	antiInactivityCountdown = 20
+	haltCountDown = true
+	
+	for i, child in ipairs(gui.StealCardContainer:GetChildren()) do
+		if not child:IsA("Frame") then continue end
+
+		child:Destroy()
+	end
+	
+	enableTaking(false)
+
+	for count = 1, cardCount do
+		local newCard = script.CardTemplate:Clone()
+
+		newCard.Icon.Image = "rbxassetid://" .. cardInfo["CardBack"]["IconID"]
+		newCard.LayoutOrder = count
+		newCard.ZIndex = count
+		newCard.Visible = true
+		newCard.Icon.InputSink = Enum.InputSink.All
+		newCard.Icon.UIDragDetector:Destroy()
+		newCard.Name = tostring(count)
+
+		newCard.Parent = gui.StealCardContainer
+
+		newCard.Icon.Activated:Connect(function()
+			if action == "Awaiting" then
+				action = count
+			end
+		end)
+
+		local t = cardCount > 1 and (count - (cardCount + 1) / 2) / ((cardCount - 1) / 2) or 0
+
+		local rotation = t * 10
+		local yOffset = (t * t) * 0.2
+
+		newCard.Icon.Position = UDim2.fromScale(0.5, 0.5 - yOffset)
+		newCard.Icon.Rotation = -rotation
+	end
+
+	updateStealScaling()
+
+	tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.33)}):Play()
+	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 1.25)}):Play()
+
+	activateCards(false)
+	
+	if actionCountdownThread then
+		coroutine.close(actionCountdownThread)
+	end
+
+	actionCountdownThread = task.spawn(function()
+		while task.wait(1) do
+			if actionInactivityCountdown == 0 then
+				break
+			else
+				actionInactivityCountdown -= 1
+			end
+		end
+	end)
+
+	while task.wait() do
+		if action and action ~= "Awaiting" then
+			print(action)
+
+			task.defer(function()
+				terminateAction()
+			end)
+
+			return action
+		end
+
+		if actionInactivityCountdown == 0 then
+			task.defer(function()
+				terminateAction()
+			end)
+
+			return -1
+		end
+	end
+
+	task.defer(function()
+		terminateAction()
+	end)
+
+	return -1
 end
 
 replicatedStorage.Communicators.Remotes.Events.TransitionWithRound.OnClientEvent:Connect(function()
@@ -933,19 +1055,144 @@ end)
 
 -------------------------------------- Connections --------------------------------------
 
+pcall(function()
+	game:GetService("StarterGui"):SetCore("ResetButtonCallback", false)
+end)
+
+replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClientInvoke = function(DecisionType:string, Data1:number) : string | {string} | number
+	if DecisionType == "Take" then
+		return decisionTake()
+	elseif DecisionType == "Steal" then
+		return decisionSteal(Data1)
+	else
+		warn("Invalid Decision Type")
+		
+		return 0
+	end
+end
+
+cardActions.Take.MouseEnter:Connect(function()
+	local highlight = workspace.Camera:FindFirstChildOfClass("Highlight")
+	local topMostCard  = workspace.Round.Cards.Deck:FindFirstChild(tostring(#workspace.Round.Cards.Deck:GetChildren()))::BasePart
+
+	tweenService:Create(cardActions.Take.UIStroke, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Thickness = 0.05}):Play()
+
+	if not highlight then
+		highlight = replicatedStorage.Highlight:Clone()::Highlight
+		highlight.Parent = workspace.Camera
+	end
+
+	if topMostCard and highlight then
+		highlight.OutlineTransparency = 1
+		highlight.FillTransparency = 1
+
+		highlight.Adornee = topMostCard
+
+		tweenService:Create(highlight, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {OutlineTransparency = 0, FillTransparency = 0.5}):Play()
+	end
+end)
+
+cardActions.Take.MouseLeave:Connect(function()
+	local highlight = workspace.Camera:FindFirstChildOfClass("Highlight")
+
+	tweenService:Create(cardActions.Take.UIStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Thickness = 0}):Play()
+
+	if highlight then
+		highlight.Adornee = nil
+	end
+end)
+
+cardActions.Use.MouseEnter:Connect(function()
+	tweenService:Create(cardActions.Use.UIStroke, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Thickness = 0.05}):Play()
+end)
+
+cardActions.Use.MouseLeave:Connect(function()
+	tweenService:Create(cardActions.Use.UIStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Thickness = 0}):Play()
+end)
+
+cardActions.Steal.MouseEnter:Connect(function()
+	tweenService:Create(cardActions.Steal.UIStroke, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Thickness = 0.05}):Play()
+end)
+
+cardActions.Steal.MouseLeave:Connect(function()
+	tweenService:Create(cardActions.Steal.UIStroke, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Thickness = 0}):Play()
+end)
+
+cardActions.Take:GetPropertyChangedSignal("Visible"):Connect(function()
+	if cardActions.Take.Visible then
+		if cardActions.Use.Visible and cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(1, 0.5)}):Play()
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		elseif cardActions.Use.Visible and not cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(1, 0.5)}):Play()
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.7, 0.5)}):Play()
+		elseif not cardActions.Use.Visible and cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.7, 0.5)}):Play()
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		end
+	else
+		if cardActions.Use.Visible and cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.7, 0.5)}):Play()
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.3, 0.5)}):Play()
+		elseif cardActions.Use.Visible and not cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(1, 0.5)}):Play()
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		elseif not cardActions.Use.Visible and cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		end
+	end
+end)
+
 cardActions.Use:GetPropertyChangedSignal("Visible"):Connect(function()
 	if cardActions.Use.Visible then
-		tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.7, 0.5)}):Play()
+		if cardActions.Take.Visible and cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(1, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0, 0.5)}):Play()
+		elseif cardActions.Take.Visible and not cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(1, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.3, 0.5)}):Play()
+		elseif not cardActions.Take.Visible and cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.7, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0, 0.5)}):Play()
+		end
 	else
-		tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		if cardActions.Take.Visible and cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.7, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.3, 0.5)}):Play()
+		elseif cardActions.Take.Visible and not cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(1, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		elseif not cardActions.Take.Visible and cardActions.Steal.Visible then
+			tweenService:Create(cardActions.Steal, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0, 0.5)}):Play()
+		end
 	end
 end)
 
 cardActions.Steal:GetPropertyChangedSignal("Visible"):Connect(function()
 	if cardActions.Steal.Visible then
-		tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.3, 0.5)}):Play()
+		if cardActions.Take.Visible and cardActions.Use.Visible then
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0, 0.5)}):Play()
+		elseif cardActions.Take.Visible and not cardActions.Use.Visible then
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.3, 0.5)}):Play()
+		elseif not cardActions.Take.Visible and cardActions.Use.Visible then
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.3, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0, 0.5)}):Play()
+		end
 	else
-		tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		if cardActions.Take.Visible and cardActions.Use.Visible then
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.7, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.3, 0.5)}):Play()
+		elseif cardActions.Take.Visible and not cardActions.Use.Visible then
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+		elseif not cardActions.Take.Visible and cardActions.Use.Visible then
+			tweenService:Create(cardActions.Use, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
+			tweenService:Create(cardActions.Take, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = UDim2.fromScale(0, 0.5)}):Play()
+		end
 	end
 end)
 
