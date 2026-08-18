@@ -67,6 +67,9 @@ function helpers.isPlayer(index: number): (boolean, Player?)
 	if #playerTable == 0 then return false, nil end
 
 	local plr = playerTable[index]
+	
+	if not plr then return false, nil end
+	
 	local player = players:FindFirstChild(plr)
 
 	if player then
