@@ -3,7 +3,7 @@
 
 local players = game:GetService("Players")
 
-local data = require(game.ReplicatedStorage.Modules.Data)
+local data = require(script.Data)
 
 function playerAdded(plr:Player)
 	data.loadPlayerData(plr)
