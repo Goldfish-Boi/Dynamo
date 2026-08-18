@@ -17,3 +17,4 @@
 
 ## What is Dynamo
 My very own recreation of the popular card game *Exploding Kittens* made into a Roblox game, where the goal is to avoid drawing an explosive card from the deck and to be the last one standing, using other cards and strategies to stay alive until the end.
+<img width="1920" height="1080" alt="DynamoThumbnail" src="https://github.com/user-attachments/assets/973b6dd5-6354-4f2e-aceb-e2a975662c38" />
