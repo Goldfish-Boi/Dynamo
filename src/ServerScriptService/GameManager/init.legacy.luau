@@ -31,7 +31,7 @@ local playerStatus = workspace.Lobby.ServerDataSigns.PlayerStatuses
 
 local currentTurnIndex:number = 0
 local intermissionLength:number = 0
-local bombDutyCountdownLength:number = 0
+local bombDutyCountdownLength:number = 10
 local usedCardCount:number = 0
 
 local botCountOverride:number? = nil
@@ -143,8 +143,28 @@ function removePlayerFromTable(index:number)
 	
 	
 	if pillarsTable[index] then
+		pillarsTable[index]:AddTag("Eliminated")
+		
 		table.remove(pillarsTable, index)
 	end
+end
+
+function tweenModel(model:Model, tweenInfo:TweenInfo, targetCFrame:CFrame)
+	if not model.PrimaryPart then return end
+	
+	local cframeValue = Instance.new("CFrameValue")
+	cframeValue.Value = model:GetPivot()
+	
+	cframeValue.Changed:Connect(function(newCFrame)
+		model:PivotTo(newCFrame)
+	end)
+	
+	local tween = tweenService:Create(cframeValue, tweenInfo, {Value = targetCFrame})
+	tween:Play()
+	
+	tween.Completed:Connect(function()
+		cframeValue:Destroy()
+	end)
 end
 
 function setDeckModel(updateType:string)
@@ -686,59 +706,6 @@ function cardTakenFromDeck(index:number) : boolean
 	return true
 end
 
---[[
-function initiateAction(index:number, action:{[string]:any})
-	if not plrCards then return end
-	if #playerTable <= 1 then return end
-	
-	local isaPlayer, player = helpers.isPlayer(index)
-	
-	if action.Type == "Steal" then
-		if currentTurnIndex ~= index then return end
-		
-		local primary = pillarsTable[index].PrimaryPart
-		if not primary then return end
-		
-		task.spawn(function()
-			for i, card in action["Cards"] do
-				task.spawn(function()
-					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
-
-					task.wait(1.5)
-
-					setUsedCardsModel({card})
-				end)
-
-				table.remove(plrCards[index], table.find(plrCards[index], card))
-
-				task.wait(0.125)
-			end
-		end)
-	elseif action.Type == "Triple Steal" then
-		if currentTurnIndex ~= index then return end
-
-		local primary = pillarsTable[index].PrimaryPart
-		if not primary then return end
-		
-		task.spawn(function()
-			for i, card in action["Cards"] do
-				task.spawn(function()
-					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
-
-					task.wait(1.5)
-
-					setUsedCardsModel({card})
-				end)
-
-				table.remove(plrCards[index], table.find(plrCards[index], card))
-
-				task.wait(0.125)
-			end
-		end)
-	end
-end
-]]--
-
 function getDecision(index:number) : string?|{string}?
 	if not deck then return nil end
 	
@@ -802,8 +769,6 @@ function checkDecision(index:number, decision:string | {string} ) : boolean
 			
 			table.remove(plrCards[index], table.find(plrCards[index], decision[1]))
 		else
-			
-			
 			for i, card in ipairs(decision) do
 				local module = script.CardModules:FindFirstChild(decision[i])::Instance
 				if module then
@@ -907,6 +872,14 @@ function beginRound()
 	setDeckModel("Set")
 	
 	task.wait(2)
+	
+	task.spawn(function()
+		tweenModel(workspace.Lobby.GateLeft, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 30.5, -8))
+	end)
+
+	task.spawn(function()
+		tweenModel(workspace.Lobby.GateRight, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 30.5, 8))
+	end)
 end
 
 function runRoundLoop()
@@ -1003,6 +976,14 @@ function gameLoop()
 		task.wait(intermissionLength + 2)
 		
 		setTweenState(true)
+		
+		task.spawn(function()
+			tweenModel(workspace.Lobby.GateLeft, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 30.5, -22))
+		end)
+		
+		task.spawn(function()
+			tweenModel(workspace.Lobby.GateRight, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 30.5, 22))
+		end)
 		
 		for countDown = bombDutyCountdownLength, 1, -1 do
 			mainScreen.SurfaceGui.TextLabel1.Text = "Bomb duty in " .. tostring(countDown) .. "s"
