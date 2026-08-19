@@ -8,13 +8,13 @@ export type dictionary<t> = {[string]:t}
 
 export type StealAction = {
 	Type: "Steal",
-	TargetIndex: number,
+	TargetIndex: number | string,
 	Cards: {string},
 }
 
 export type TripleStealAction = {
 	Type: "Triple Steal",
-	TargetIndex: number,
+	TargetIndex: number | string,
 	Cards: {string},
 	--RequestedCard: string,
 }
