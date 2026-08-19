@@ -10,6 +10,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Functions functions uh variable code code if statement table dictionary what next um uh service remote",
 		MenuDescription = "This was the very first card added, mostly because it doesn't do anything",		
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 		
@@ -22,6 +23,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "A dangerous card, avoid holding on to this",
 		MenuDescription = "The main product of this facility and the very thing you wish to avoid",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 		
@@ -34,6 +36,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Shuffles every card in the deck randomly",
 		MenuDescription = "Go my lovely psuedorandom method",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = false,
 		
@@ -46,6 +49,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Will automatically save you if a dynamite is going to eliminate you",	
 		MenuDescription = "Why don't we have more of these, I should make an entire deck of these",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 		
@@ -58,6 +62,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Get a look at the next three cards on the deck",
 		MenuDescription = "Gem alert 🚨🚨🗣️🔥🔥💥",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = false,
 		
@@ -70,6 +75,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Skips one turn",
 		MenuDescription = "Yeah no",
 		
+		SkipsTurn = true,
 		Usable = true,
 		CanStack = true,
 		
@@ -82,6 +88,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Make a player give you one of their cards",
 		MenuDescription = "Gimme gimme",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = true,
 		
@@ -94,6 +101,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Forces the next player to take two turns and can chain. Ends your turn",		
 		MenuDescription = "Auuuuuuuugh 🤬",
 		
+		SkipsTurn = true,
 		Usable = true,
 		CanStack = false,
 		
@@ -106,6 +114,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Cancel another player's action. Works on most cards, including itself",
 		MenuDescription = "Nuh uh",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = false,
 		
@@ -118,6 +127,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",
 		MenuDescription = "Mmm... Chezburger",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 		
@@ -130,6 +140,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",
 		MenuDescription = "Pepis",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 
@@ -142,6 +153,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "Yayyyy",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 		
@@ -154,6 +166,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "It's raining tacos~~",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 		
@@ -166,6 +179,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "Mmmmm, yummy!",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 		
@@ -178,6 +192,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Tells you when the next dynamite will appear in the deck",
 		MenuDescription = "What did he see?",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = false,
 		
@@ -190,6 +205,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Gathers every dynamite card and brings them to the top of the deck",
 		MenuDescription = "One thousand yard stare",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = false,
 		
@@ -202,6 +218,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "When in your deck, it will allow you to hold onto one dynamite card safely",	
 		MenuDescription = "There there little dynamite, don't cry",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 
@@ -213,6 +230,7 @@ const cardInfo = table.freeze({
 		IconID = 106252258774534,
 		DeckDescription = "Change the ordering of the next three cards on the deck",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = false,
 
@@ -225,6 +243,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Skips all turns you currently have",		
 		MenuDescription = "The cooler skip",
 		
+		SkipsTurn = true,
 		Usable = true,
 		CanStack = false,
 		
@@ -237,6 +256,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Does absolutely nothing",
 		MenuDescription = "Why was this even added???",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 
@@ -249,6 +269,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Forces a player of your choice to take two turns, can chain. Ends your turn",	
 		MenuDesciption = "Bye bye Russia 👋👋👋💥",
 		
+		SkipsTurn = true,
 		Usable = true,
 		CanStack = false,
 		
@@ -261,6 +282,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Reverse the order of play and skips a turn",
 		MenuDescription = "Uno reverse",
 		
+		SkipsTurn = true,
 		Usable = true,
 		CanStack = true,
 		
@@ -273,6 +295,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Reveal a card that another person has",
 		MenuDescription = "Well well well, what do we have here? 😈",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = true,
 		
@@ -284,6 +307,7 @@ const cardInfo = table.freeze({
 		IconID = nil,
 		DeckDescription = "Take the bottom-most card from the deck on your next turn",		
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = true,
 
@@ -296,6 +320,7 @@ const cardInfo = table.freeze({
 		DeckDescription = "Inverts the deck",	
 		MenuDescription = "kced eht strevnI",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = false,
 
@@ -309,6 +334,7 @@ const cardInfo = table.freeze({
 		InfoOverrideDescription = "Place back in the deck face up when drawn face down. Eliminates immediately when drawn face up",
 		MenuDescription = "Ok seriously WHY DO WE HAVE THESE???",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 
@@ -320,6 +346,7 @@ const cardInfo = table.freeze({
 		IconID = nil,
 		Description = "Force yourself to take 3 turns",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = true,
 		
@@ -331,6 +358,7 @@ const cardInfo = table.freeze({
 		IconID = nil,
 		Description = "Put away the next card you draw rather than taking it into your deck",
 		
+		SkipsTurn = true,
 		Usable = true,
 		CanStack = false,
 
@@ -342,6 +370,7 @@ const cardInfo = table.freeze({
 		IconID = nil,
 		Description = "Grants immunity to being stolen from",
 		
+		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 
@@ -353,6 +382,7 @@ const cardInfo = table.freeze({
 		IconID = nil,
 		Description = "Take the next card that someone else takes",
 		
+		SkipsTurn = false,
 		Usable = true,
 		CanStack = true,
 		
