@@ -4,9 +4,11 @@
 1. Create an account, must be verified 16+ to play due to roblox age restrictions
 2. Install the Roblox Player
 3. Open experience page and press the play button
+4. Wait for the big screen in the main lobby to say "Bomb duty in __s"
+5. Jump on the platform that opens up in front of the screen. It shall send you to the round soon.
 
 ## Dynamo (+ Roblox default) controls
-`WASD` - Move character
+- `WASD` - Move character
 `Up/Down Arrow` - Move forwards / backwards
 `Left/Right Arrow` - Turn camera
 `Mousewheel Forwards/Backwards` - Zoom in/out
