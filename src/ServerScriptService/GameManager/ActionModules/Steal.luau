@@ -11,17 +11,23 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 	if (not helpers.getPlrCardsProvider) or (not helpers.getPlayerTable) then warn("No Helpers registered") return end
 	
+	local targetIndex:number = actionInfo.TargetIndex::number
+	
+	if typeof(actionInfo.TargetIndex) == "string" then
+		targetIndex = helpers.getPlayerIndex(actionInfo.TargetIndex)
+	end
+	
 	local isaPlayer, player = helpers.isPlayer(index)
-	local targetIsaPlayer, targetPlayer = helpers.isPlayer(actionInfo.TargetIndex)
+	local targetIsaPlayer, targetPlayer = helpers.isPlayer(targetIndex)
 	local plrCards = helpers.getPlrCardsProvider()
 	
 	local players = helpers.getPlayerTable()
 	
-	print(players[index] .. " is stealing from " .. players[actionInfo.TargetIndex])
+	print(players[index] .. " is stealing from " .. players[targetIndex])
 	
 	if isaPlayer and player then
 		local success, stealIndex:string|number = pcall(function()
-			return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "Steal", #plrCards[actionInfo.TargetIndex])
+			return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "Steal", #plrCards[targetIndex])
 		end)
 		
 		if not success then
@@ -36,12 +42,12 @@ function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 			return
 		end
 		
-		local stolenCard:string = plrCards[actionInfo.TargetIndex][stealIndex]
+		local stolenCard:string = plrCards[targetIndex][stealIndex]
 		
 		if targetIsaPlayer and targetPlayer then
 			replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(targetPlayer, "RemoveCard", nil, stealIndex)
 		else
-			Random.new():Shuffle(plrCards[actionInfo.TargetIndex])
+			Random.new():Shuffle(plrCards[targetIndex])
 		end
 		
 		print(stolenCard)
@@ -52,10 +58,10 @@ function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 			replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(player, "AddCard", stolenCard)
 		end)
 		
-		table.remove(plrCards[actionInfo.TargetIndex], stealIndex)
+		table.remove(plrCards[targetIndex], stealIndex)
 	else
-		local stealIndex = math.random(1, #plrCards[actionInfo.TargetIndex])
-		local stolenCard:string = plrCards[actionInfo.TargetIndex][stealIndex]
+		local stealIndex = math.random(1, #plrCards[targetIndex])
+		local stolenCard:string = plrCards[targetIndex][stealIndex]
 
 		print(stolenCard)
 		
@@ -65,7 +71,7 @@ function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 		
 		table.insert(plrCards[index], stolenCard) 
 			
-		table.remove(plrCards[actionInfo.TargetIndex], stealIndex)
+		table.remove(plrCards[targetIndex], stealIndex)
 	end
 end
 
@@ -74,13 +80,19 @@ function stealModule.TripleSteal(index:number, actionInfo:types.ActionInfo)
 	
 	print("Triple Steal")
 	
+	local targetIndex:number = actionInfo.TargetIndex::number
+
+	if typeof(actionInfo.TargetIndex) == "string" then
+		targetIndex = helpers.getPlayerIndex(actionInfo.TargetIndex)
+	end
+	
 	local isaPlayer, player = helpers.isPlayer(index)
-	local targetIsaPlayer, targetPlayer = helpers.isPlayer(actionInfo.TargetIndex)
+	local targetIsaPlayer, targetPlayer = helpers.isPlayer(targetIndex)
 	local plrCards = helpers.getPlrCardsProvider()
 
 	if isaPlayer and player then
 		local success, stealIndex:string|number = pcall(function()
-			return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "Triple Steal", #plrCards[actionInfo.TargetIndex])
+			return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "Triple Steal", #plrCards[targetIndex])
 		end)
 
 		if not success then
@@ -93,7 +105,7 @@ function stealModule.TripleSteal(index:number, actionInfo:types.ActionInfo)
 			return
 		end
 
-		local stolenCard:string = plrCards[actionInfo.TargetIndex][stealIndex]
+		local stolenCard:string = plrCards[targetIndex][stealIndex]
 
 		print(stolenCard)
 
@@ -103,16 +115,16 @@ function stealModule.TripleSteal(index:number, actionInfo:types.ActionInfo)
 			replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(player, "AddCard", stolenCard)
 		end)
 
-		table.remove(plrCards[actionInfo.TargetIndex], stealIndex)
+		table.remove(plrCards[targetIndex], stealIndex)
 	else
-		local stealIndex = math.random(1, #plrCards[actionInfo.TargetIndex])
-		local stolenCard:string = plrCards[actionInfo.TargetIndex][stealIndex]
+		local stealIndex = math.random(1, #plrCards[targetIndex])
+		local stolenCard:string = plrCards[targetIndex][stealIndex]
 
 		print(stolenCard)
 
 		table.insert(plrCards[index], stolenCard) 
 
-		table.remove(plrCards[actionInfo.TargetIndex], stealIndex)
+		table.remove(plrCards[targetIndex], stealIndex)
 	end
 end
 
