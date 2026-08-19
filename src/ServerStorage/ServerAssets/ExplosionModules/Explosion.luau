@@ -5,7 +5,7 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local cameraShaker = require(replicatedStorage.Modules.CameraShaker)
 
-local explosionParts = script.ExplosionParts
+local explosionParts = replicatedStorage.Assets.ExplosionAssets.Explosion.ExplosionParts
 
 local camShake = cameraShaker.new(Enum.RenderPriority.Camera.Value, function(shakeCFrame) workspace.Camera.CFrame *= shakeCFrame end)
 
