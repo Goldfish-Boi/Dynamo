@@ -299,10 +299,69 @@ function hoverCard(card:Frame, hovering:boolean)
 	tweenService:Create(icon, TweenInfo.new(0.125, Enum.EasingStyle.Back, Enum.EasingDirection.Out), if hovering then {Position = UDim2.fromScale(0.5, math.max(0.5 + rest.yOffset - 0.375, 0)), Rotation = 0} else {Position = UDim2.fromScale(0.5, 0.5 + rest.yOffset), Rotation = rest.rotation}):Play()
 end
 
-function pickPlayer():string
-	workspace.Camera.CameraType = Enum.CameraType.Custom
+function pickPlayer() : string
+	if not game.Players.LocalPlayer then return "Bot 1" end
 	
-	tweenService:Create(workspace.Camera, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = workspace.Origin.CFrame * CFrame.new(0, 100, 0)}):Play()
+	local target = nil
+	local antiAFK = false
+	
+	local billboards:{BillboardGui} = {}
+	
+	workspace.Camera.CameraType = Enum.CameraType.Scriptable
+	
+	tweenService:Create(cardContainer, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 1.5)}):Play()
+	tweenService:Create(workspace.Camera, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = CFrame.lookAt(workspace.Origin.Position + Vector3.new(-10, 100 + (10 * #workspace.Round.Pillars:GetChildren()), 0), workspace.Origin.Position)}):Play()
+	
+	for i, pillar in ipairs(workspace.Round.Pillars:GetChildren()) do
+		if pillar:HasTag("Eliminated") or pillar.Name == tostring(game.Players.LocalPlayer) then continue end
+		
+		local billboard = replicatedStorage.Assets.Round.TargetGUI:Clone()
+		local billboardFolder = game.Players.LocalPlayer.PlayerGui:FindFirstChild("Billboards")
+		local player = game.Players:FindFirstChild(pillar.Name)::Player?
+		
+		table.insert(billboards, billboard)
+		
+		billboard.Parent = billboardFolder or game.Players.LocalPlayer.PlayerGui
+		billboard.Adornee = pillar
+		billboard.Enabled = true
+		
+		billboard.TextButton.Holder.TextLabel.Text = pillar.Name
+		billboard.TextButton.Icon.Image = if  player then "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=420&h=420" else "rbxassetid://" .. tostring(universalInfo["Assets"]["BotIcon"])
+		
+		billboard.TextButton.Activated:Connect(function()
+			target = pillar.Name
+		end)
+	end
+	
+	task.delay(20, function()
+		antiAFK = true
+	end)
+	
+	while task.wait() do
+		if target then
+			task.defer(function()
+				tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
+				
+				for i, billboard in ipairs(billboards) do
+					billboard:Destroy()
+				end
+			end)
+			
+			return target
+		end
+		
+		if antiAFK then
+			break
+		end
+	end
+	
+	task.defer(function()
+		tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
+		
+		for i, billboard in ipairs(billboards) do
+			billboard:Destroy()
+		end
+	end)
 	
 	return "Bot 1"
 end
@@ -801,7 +860,7 @@ cardActions.Steal.Activated:Connect(function()
 			table.insert(cardNames, card.Name)
 		end
 		
-		replicatedStorage.Communicators.Remotes.Events.InitiateAction:FireServer({Type = if #cardsSelected == 3 then "Triple Steal" else "Steal", TargetIndex = 1, Cards = cardNames, RequestedCard = if #cardsSelected == 3 then "Defuse" else nil})
+		replicatedStorage.Communicators.Remotes.Events.InitiateAction:FireServer({Type = if #cardsSelected == 3 then "Triple Steal" else "Steal", TargetIndex = pickPlayer(), Cards = cardNames, RequestedCard = if #cardsSelected == 3 then "Defuse" else nil})
 		
 		for i, card in ipairs(cardsToRemove) do
 			local indexToRemove = table.find(cards, card)
@@ -820,6 +879,18 @@ cardActions.Steal.Activated:Connect(function()
 end)
 
 function terminateDecision()
+	if decision then
+		if typeof(decision) == "string" then
+			if cardInfo[decision] and cardInfo[decision]["SkipsTurn"] == false then
+				return
+			end
+		elseif typeof(decision) == "table" then
+			if cardInfo[decision[1]] and cardInfo[decision[1]]["SkipsTurn"] == false then
+				return
+			end
+		end
+	end
+	
 	decision = nil
 	enableTaking(false)
 	
