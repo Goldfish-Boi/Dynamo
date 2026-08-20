@@ -820,6 +820,10 @@ function turn(index:number) : boolean
 	if deckManager.GetTurnCount() == 0 then
 		deckManager.SetTurnCount(1)
 	end
+	
+	if deckManager["OverrideTurnIndex"] > 0 then
+		deckManager["OverrideTurnIndex"] = -1
+	end
 
 	deckManager["IsRoundTerminated"] = false
 	
@@ -904,7 +908,7 @@ function runRoundLoop()
 			currentTurnIndex = 1
 		end
 
-		eliminated = turn(currentTurnIndex)
+		eliminated = turn(if deckManager["OverrideTurnIndex"] > 0 then deckManager["OverrideTurnIndex"] else currentTurnIndex)
 	end
 	
 	task.wait(3)
