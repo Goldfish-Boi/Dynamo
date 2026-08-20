@@ -6,8 +6,7 @@ local types = require(script.Parent.Parent.Types)
 local deckManager = {
 	TurnsToDo = 1,
 	IsRoundTerminated = false,
-	InitialDeck = nil,
-	CurrentDeck = nil,
+	OverrideTurnIndex = -1,
 }
 --::types.deckManager
 
@@ -33,8 +32,8 @@ const cards = table.freeze({
 })
 
 const variableCards = table.freeze({
-	{Name = "Skip", ChancePerPlr = 1000, CanBecome = {"Ultra Skip"}, Chance = {20}},
-	{Name = "Attack", ChancePerPlr = 100, CanBecome = {"Targeted Attack"}, Chance = {33}},
+	{Name = "Skip", ChancePerPlr = 100, CanBecome = {"Ultra Skip"}, Chance = {20}},
+	{Name = "Attack", ChancePerPlr = 1000, CanBecome = {"Targeted Attack"}, Chance = {100}},
 	--{Name = "Peek", ChancePerPlr = 100, CanBecome = {"Adjust"}, Chance = {50}},
 })
 
