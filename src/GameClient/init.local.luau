@@ -299,7 +299,7 @@ function hoverCard(card:Frame, hovering:boolean)
 	tweenService:Create(icon, TweenInfo.new(0.125, Enum.EasingStyle.Back, Enum.EasingDirection.Out), if hovering then {Position = UDim2.fromScale(0.5, math.max(0.5 + rest.yOffset - 0.375, 0)), Rotation = 0} else {Position = UDim2.fromScale(0.5, 0.5 + rest.yOffset), Rotation = rest.rotation}):Play()
 end
 
-function pickPlayer() : string
+function pickPlayer(resetCamera:boolean?) : string
 	if not game.Players.LocalPlayer then return "Bot 1" end
 	
 	local target = nil
@@ -342,6 +342,14 @@ function pickPlayer() : string
 			task.defer(function()
 				tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
 				
+				if resetCamera and originalCameraCFrame then
+					task.delay(0.5, function()
+						workspace.Camera.CameraType = Enum.CameraType.Custom
+					end)
+					
+					tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
+				end
+				
 				for i, billboard in ipairs(billboards) do
 					billboard:Destroy()
 				end
@@ -357,6 +365,14 @@ function pickPlayer() : string
 	
 	task.defer(function()
 		tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
+		
+		if resetCamera and originalCameraCFrame then
+			task.delay(0.5, function()
+				workspace.Camera.CameraType = Enum.CameraType.Custom
+			end)
+			
+			tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
+		end
 		
 		for i, billboard in ipairs(billboards) do
 			billboard:Destroy()
@@ -878,7 +894,7 @@ cardActions.Steal.Activated:Connect(function()
 	end
 end)
 
-function terminateDecision()
+function terminateDecision(bypassCameraReset:boolean?)
 	if decision then
 		if typeof(decision) == "string" then
 			if cardInfo[decision] and cardInfo[decision]["SkipsTurn"] == false then
@@ -894,7 +910,7 @@ function terminateDecision()
 	decision = nil
 	enableTaking(false)
 	
-	if workspace.Camera.CameraType == Enum.CameraType.Scriptable then
+	if workspace.Camera.CameraType == Enum.CameraType.Scriptable and not bypassCameraReset then
 		task.delay(0.5, function()
 			workspace.Camera.CameraType = Enum.CameraType.Custom
 		end)
@@ -928,8 +944,6 @@ function terminateAction()
 end
 
 function enableTaking(enabled:boolean)
-	print(enabled)
-	
 	if enabled then
 		if not cardActions.Take.Visible then
 			cardActions.Take.Size = UDim2.fromScale(0.001, 1)
@@ -995,8 +1009,8 @@ function decisionTake() : string | {string}
 		if decision and decision ~= "Awaiting" then
 			print(decision)
 
-			task.defer(function()
-				terminateDecision()
+			task.defer(function()			
+				terminateDecision(typeof(decision) == "table" and decision[1] and decision[1] == "Targeted Attack" and cardInfo[decision[1]])
 			end)
 
 			return decision
@@ -1004,7 +1018,7 @@ function decisionTake() : string | {string}
 
 		if antiInactivityCountdown == 0 then
 			task.defer(function()
-				terminateDecision()
+				terminateDecision(typeof(decision) == "table" and decision[1] and decision[1] == "Targeted Attack" and cardInfo[decision[1]])
 			end)
 
 			return "AFK"
@@ -1012,7 +1026,7 @@ function decisionTake() : string | {string}
 	end
 
 	task.defer(function()
-		terminateDecision()
+		terminateDecision(typeof(decision) == "table" and decision[1] and decision[1] == "Targeted Attack" and cardInfo[decision[1]])
 	end)
 
 	return "AFK"
@@ -1130,11 +1144,13 @@ pcall(function()
 	game:GetService("StarterGui"):SetCore("ResetButtonCallback", false)
 end)
 
-replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClientInvoke = function(DecisionType:string, Data1:number) : string | {string} | number
+replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClientInvoke = function(DecisionType:string, Data1:(number|boolean)?) : string | {string} | number
 	if DecisionType == "Take" then
 		return decisionTake()
-	elseif DecisionType == "Steal" then
+	elseif DecisionType == "Steal" and typeof(Data1) == "number" then
 		return decisionSteal(Data1)
+	elseif DecisionType == "PickPlayer" and typeof(Data1) ~= "number" then
+		return pickPlayer(Data1)
 	else
 		warn("Invalid Decision Type")
 		
