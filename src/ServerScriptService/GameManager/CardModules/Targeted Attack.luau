@@ -19,9 +19,6 @@ function module.Main(index:number)
 		deckManager.SetTurnCount(deckManager.GetTurnCount() + 2)
 	end
 	
-	workspace.Sounds.Attack.PitchShiftSoundEffect.Octave = (0.1 * deckManager.GetTurnCount()) + 0.8
-	workspace.Sounds.Attack:Play()
-	
 	if isaPlayer and player then
 		local success, targetIndex = pcall(function()
 			return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "PickPlayer", true)::string
@@ -35,6 +32,9 @@ function module.Main(index:number)
 	else
 		deckManager["OverrideTurnIndex"] = helpers.getPlayerIndex(helpers.getAllOthers(index)[math.random(1, #helpers.getAllOthers(index))])
 	end
+	
+	workspace.Sounds.Attack.PitchShiftSoundEffect.Octave = (0.1 * deckManager.GetTurnCount()) + 0.8
+	workspace.Sounds.Attack:Play()
 	
 	deckManager["IsRoundTerminated"] = true
 end
