@@ -5,9 +5,9 @@ const cardInfo = table.freeze({
 	},
 	
 	["Test"] = {
-		Colour = Color3.fromRGB(200, 200, 200),
+		Colour = Color3.fromRGB(190, 190, 190),
 		IconID = 137576054394981,
-		DeckDescription = "Functions functions uh variable code code if statement table dictionary what next um uh service remote",
+		DeckDescription = "Lorem Ipsum",
 		MenuDescription = "This was the very first card added, mostly because it doesn't do anything",		
 		
 		SkipsTurn = false,
@@ -18,10 +18,11 @@ const cardInfo = table.freeze({
 		BotUsuability = 0,
 	},
 	["Dynamite"] = {
-		Colour = Color3.fromRGB(30, 30, 30),
+		Colour = Color3.fromRGB(255, 75, 75),
 		IconID = 104310645136189,
 		DeckDescription = "A dangerous card, avoid holding on to this",
 		MenuDescription = "The main product of this facility and the very thing you wish to avoid",
+		UseStroke = true,
 		
 		SkipsTurn = false,
 		Usable = false,
@@ -31,7 +32,7 @@ const cardInfo = table.freeze({
 		BotUsuability = -9999,
 	},
 	["Shuffle"] = {
-		Colour = Color3.fromRGB(204, 188, 128),
+		Colour = Color3.fromRGB(232, 195, 146),
 		IconID = 76885960028848,
 		DeckDescription = "Shuffles every card in the deck randomly",
 		MenuDescription = "Go my lovely psuedorandom method",
@@ -44,7 +45,7 @@ const cardInfo = table.freeze({
 		BotUsuability = 1,
 	},
 	["Defuse"] = {
-		Colour = Color3.fromRGB(156, 255, 134),
+		Colour = Color3.fromRGB(151, 255, 98),
 		IconID = 132309707595377,
 		DeckDescription = "Will automatically save you if a dynamite is going to eliminate you",	
 		MenuDescription = "Why don't we have more of these, I should make an entire deck of these",
@@ -57,7 +58,7 @@ const cardInfo = table.freeze({
 		BotUsuability = 999,
 	},
 	["Peek"] = {
-		Colour = Color3.fromRGB(180, 138, 214),
+		Colour = Color3.fromRGB(255, 139, 230),
 		IconID = 113840094808338,
 		DeckDescription = "Get a look at the next three cards on the deck",
 		MenuDescription = "Gem alert 🚨🚨🗣️🔥🔥💥",
@@ -70,7 +71,7 @@ const cardInfo = table.freeze({
 		BotUsuability = 15,
 	},
 	["Skip"] = {
-		Colour = Color3.fromRGB(76, 183, 232),
+		Colour = Color3.fromRGB(90, 184, 255),
 		IconID = 75972992026610,
 		DeckDescription = "Skips one turn",
 		MenuDescription = "Yeah no",
@@ -80,10 +81,10 @@ const cardInfo = table.freeze({
 		CanStack = true,
 		
 		UsuabilityType = "Defense",
-		BotUsuability = 10,
+		BotUsuability = 20,
 	},
 	["Request"] = {
-		Colour = Color3.fromRGB(45, 51, 63),
+		Colour = Color3.fromRGB(69, 69, 69),
 		IconID = 116510499183394,
 		DeckDescription = "Make a player give you one of their cards",
 		MenuDescription = "Gimme gimme",
@@ -93,10 +94,10 @@ const cardInfo = table.freeze({
 		CanStack = true,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 10,
+		BotUsuability = 15,
 	},
 	["Attack"] = {
-		Colour = Color3.fromRGB(214, 139, 74),
+		Colour = Color3.fromRGB(255, 171, 115),
 		IconID = 71529133395865,
 		DeckDescription = "Forces the next player to take two turns and can chain. Ends your turn",		
 		MenuDescription = "Auuuuuuuugh 🤬",
@@ -106,10 +107,10 @@ const cardInfo = table.freeze({
 		CanStack = false,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 15,
+		BotUsuability = 25,
 	},
 	["Deny"] = {
-		Colour = Color3.fromRGB(161, 10, 13),
+		Colour = Color3.fromRGB(255, 125, 120),
 		IconID = 109600127359870,
 		DeckDescription = "Cancel another player's action. Works on most cards, including itself",
 		MenuDescription = "Nuh uh",
@@ -119,10 +120,10 @@ const cardInfo = table.freeze({
 		CanStack = false,
 		
 		UsuabilityType = "Defense",
-		BotUsuability = 100
+		BotUsuability = 15
 	},
 	["Cheezburger"] = {
-		Colour = Color3.fromRGB(200, 200, 200),
+		Colour = Color3.fromRGB(190, 190, 190),
 		IconID = 70877843847181,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",
 		MenuDescription = "Mmm... Chezburger",
@@ -135,7 +136,7 @@ const cardInfo = table.freeze({
 		BotUsuability = 0,
 	},
 	["Bloxy Cola"] = {
-		Colour = Color3.fromRGB(200, 200, 200),
+		Colour = Color3.fromRGB(190, 190, 190),
 		IconID = 117538141877342,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",
 		MenuDescription = "Pepis",
@@ -148,7 +149,7 @@ const cardInfo = table.freeze({
 		BotUsuability = 0,
 	},
 	["Cake"] = {
-		Colour = Color3.fromRGB(200, 200, 200),
+		Colour = Color3.fromRGB(190, 190, 190),
 		IconID = 70375801848911,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "Yayyyy",
@@ -161,7 +162,7 @@ const cardInfo = table.freeze({
 		BotUsuability = 0
 	},
 	["Taco"] = {
-		Colour = Color3.fromRGB(200, 200, 200),
+		Colour = Color3.fromRGB(190, 190, 190),
 		IconID = 126573726108374,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "It's raining tacos~~",
@@ -174,7 +175,7 @@ const cardInfo = table.freeze({
 		BotUsuability = 0
 	},
 	["Choco Milk"] = {
-		Colour = Color3.fromRGB(200, 200, 200),
+		Colour = Color3.fromRGB(190, 190, 190),
 		IconID = 137076446129208,
 		DeckDescription = "Useless on its own. Grants the ability to steal a card from another player when used with more of itself",	
 		MenuDescription = "Mmmmm, yummy!",
@@ -187,7 +188,7 @@ const cardInfo = table.freeze({
 		BotUsuability = 0
 	},
 	["Analyse"] = {
-		Colour = Color3.fromRGB(104, 20, 90),
+		Colour = Color3.fromRGB(194, 25, 88),
 		IconID = 86306289198577,
 		DeckDescription = "Tells you when the next dynamite will appear in the deck",
 		MenuDescription = "What did he see?",
@@ -197,23 +198,24 @@ const cardInfo = table.freeze({
 		CanStack = false,
 		
 		UsuabilityType = "Information",
-		BotUsuability = 0
+		BotUsuability = 15
 	},
 	["Doomsday"] = {
-		Colour = Color3.fromRGB(8, 8, 8),
+		Colour = Color3.fromRGB(255, 196, 8),
 		IconID = 99529482828802,
 		DeckDescription = "Gathers every dynamite card and brings them to the top of the deck",
 		MenuDescription = "One thousand yard stare",
+		UseStroke = true,
 		
 		SkipsTurn = false,
 		Usable = true,
 		CanStack = false,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 50
 	},
 	["Containment"] = {
-		Colour = Color3.fromRGB(33, 117, 52),
+		Colour = Color3.fromRGB(1, 179, 10),
 		IconID = 118041764380797,
 		DeckDescription = "When in your deck, it will allow you to hold onto one dynamite card safely",	
 		MenuDescription = "There there little dynamite, don't cry",
@@ -223,10 +225,10 @@ const cardInfo = table.freeze({
 		CanStack = false,
 
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = math.huge
 	},
 	["Adjust"] = {
-		Colour = Color3.fromRGB(137, 71, 217),
+		Colour = Color3.fromRGB(204, 140, 255),
 		IconID = 106252258774534,
 		DeckDescription = "Change the ordering of the next three cards on the deck",
 		
@@ -235,7 +237,7 @@ const cardInfo = table.freeze({
 		CanStack = false,
 
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 20
 	},
 	["Ultra Skip"] = {
 		Colour = Color3.fromRGB(91, 124, 255),
@@ -248,10 +250,10 @@ const cardInfo = table.freeze({
 		CanStack = false,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 30
 	},
 	["Ploobie"] = {
-		Colour = Color3.fromRGB(200, 200, 200),
+		Colour = Color3.fromRGB(91, 83, 65),
 		IconID = 113180431580478,
 		DeckDescription = "Does absolutely nothing",
 		MenuDescription = "Why was this even added???",
@@ -264,7 +266,7 @@ const cardInfo = table.freeze({
 		BotUsuability = -math.huge
 	},
 	["Targeted Attack"] = {
-		Colour = Color3.fromRGB(214, 139, 74),
+		Colour = Color3.fromRGB(255, 171, 115),
 		IconID = 109000279447257,
 		DeckDescription = "Forces a player of your choice to take two turns, can chain. Ends your turn",	
 		MenuDesciption = "Bye bye Russia 👋👋👋💥",
@@ -274,10 +276,10 @@ const cardInfo = table.freeze({
 		CanStack = false,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 100
+		BotUsuability = 24
 	},
 	["Reverse"] = {
-		Colour = Color3.fromRGB(0, 234, 226),
+		Colour = Color3.fromRGB(79, 255, 187),
 		IconID = 111947283702587,
 		DeckDescription = "Reverse the order of play and skips a turn",
 		MenuDescription = "Uno reverse",
@@ -287,10 +289,10 @@ const cardInfo = table.freeze({
 		CanStack = true,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 15
 	},
 	["Expose"] = {
-		Colour = Color3.fromRGB(214, 93, 141),
+		Colour = Color3.fromRGB(255, 209, 3),
 		IconID = 100370152296282,
 		DeckDescription = "Reveal a card that another person has",
 		MenuDescription = "Well well well, what do we have here? 😈",
@@ -300,7 +302,7 @@ const cardInfo = table.freeze({
 		CanStack = true,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 10
 	},
 	["Draw from the bottom"] = {
 		Colour = Color3.fromRGB(147, 166, 107),
@@ -312,7 +314,7 @@ const cardInfo = table.freeze({
 		CanStack = true,
 
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 25
 	},
 	["Invert"] = {
 		Colour = Color3.fromRGB(52, 56, 7),
@@ -325,21 +327,22 @@ const cardInfo = table.freeze({
 		CanStack = false,
 
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 10
 	},
 	["Nuke"] = {
-		Colour = Color3.fromRGB(64, 66, 111),
+		Colour = Color3.fromRGB(76, 206, 255),
 		IconID = 118923559882263,
 		DeckDescription = "How do you even have this 🥀💔",
 		InfoOverrideDescription = "Place back in the deck face up when drawn face down. Eliminates immediately when drawn face up",
 		MenuDescription = "Ok seriously WHY DO WE HAVE THESE???",
+		UseStroke = true,
 		
 		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
 
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = -math.huge
 	},
 	["Supercharge"] = {
 		Colour = Color3.fromRGB(211, 118, 12),
@@ -351,7 +354,7 @@ const cardInfo = table.freeze({
 		CanStack = true,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 15
 	},
 	["Avoid"] = {
 		Colour = Color3.fromRGB(126, 126, 126),
@@ -363,7 +366,7 @@ const cardInfo = table.freeze({
 		CanStack = false,
 
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 15
 	},
 	["Noclip"] = {
 		Colour = Color3.fromRGB(160, 197, 207),
@@ -375,7 +378,7 @@ const cardInfo = table.freeze({
 		CanStack = false,
 
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = math.huge
 	},
 	["Snatch"] = {
 		Colour = Color3.fromRGB(180, 255, 249),
@@ -387,7 +390,7 @@ const cardInfo = table.freeze({
 		CanStack = true,
 		
 		UsuabilityType = "Offense",
-		BotUsuability = 0
+		BotUsuability = 15
 	},
 })
 
