@@ -7,6 +7,7 @@ local deckManager = {
 	TurnsToDo = 1,
 	IsRoundTerminated = false,
 	OverrideTurnIndex = -1,
+	ReverseOrder = false
 }
 --::types.deckManager
 
@@ -18,13 +19,12 @@ const cards = table.freeze({
 	{Name = "Cake", ChancePerPlr = 100},
 	{Name = "Taco", ChancePerPlr = 100},
 	{Name = "Choco Milk", ChancePerPlr = 100},
+	{Name = "Reverse", ChancePerPlr = 75},
 	--{Name = "Request", ChancePerPlr = 125},
 	--{Name = "Deny", ChancePerPlr = 120},
 	--{Name = "Analyse", ChancePerPlr = 80},
 	--{Name = "Expose", ChancePerPlr = 33},
-	--{Name = "Reverse", ChancePerPlr = 75},
-	--[[{Name = "Ploobie", Amount = 2},
-	{Name = "Draw from the bottom", Amount = 1},
+	--[[{Name = "Draw from the bottom", Amount = 1},
 	{Name = "Invert", Amount = 1},
 	{Name = "Supercharge", Amount = 2},
 	{Name = "Avoid", Amount = 2},
@@ -33,7 +33,7 @@ const cards = table.freeze({
 
 const variableCards = table.freeze({
 	{Name = "Skip", ChancePerPlr = 100, CanBecome = {"Ultra Skip"}, Chance = {20}},
-	{Name = "Attack", ChancePerPlr = 1000, CanBecome = {"Targeted Attack"}, Chance = {100}},
+	--{Name = "Attack", ChancePerPlr = 1000, CanBecome = {"Targeted Attack"}, Chance = {100}},
 	--{Name = "Peek", ChancePerPlr = 100, CanBecome = {"Adjust"}, Chance = {50}},
 })
 
