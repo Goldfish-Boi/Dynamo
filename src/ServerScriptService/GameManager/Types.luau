@@ -24,8 +24,8 @@ export type ActionInfo = StealAction | TripleStealAction
 export type deckManager = {
 	TurnsToDo:number,
 	IsRoundTerminated:boolean,
-	InitialDeck:{string}?,
-	CurrentDeck:{string}?,
+	ReverseOrder:boolean,
+	OverrideTurnIndex:number,
 
 	CreatePlayerDecks: (numberOfPlayers: number) -> {any},
 	CreateDeck: (numberOfPlayers: number) -> {string},
