@@ -141,7 +141,6 @@ function removePlayerFromTable(index:number)
 		table.remove(plrCards, index)
 	end
 	
-	
 	if pillarsTable[index] then
 		pillarsTable[index]:AddTag("Eliminated")
 		
@@ -534,10 +533,12 @@ function eliminatePlayer(index:number, leaving:boolean?)
 		pillarToDestroy = pillarsFolder:FindFirstChild(playerName)
 		
 		if player then
-			task.delay(3, function()
-				replicatedStorage.Communicators.Remotes.Events.TransitionWithRound:FireClient(player)
+			pcall(function()
+				task.delay(3, function()
+					replicatedStorage.Communicators.Remotes.Events.TransitionWithRound:FireClient(player)
 
-				player:LoadCharacterAsync()
+					player:LoadCharacterAsync()
+				end)
 			end)
 		end
 	end
@@ -633,7 +634,18 @@ function cardTakenFromDeck(index:number) : boolean
 	
 	-- Dynamite
 	
-	if table.find(plrCards[index], "Containment") and not table.find(plrCards[index], "Dynamite") then
+	local containmentCount = 0
+	local dynamiteCount = 0
+	
+	for i, card in ipairs(plrCards[index]) do
+		if card == "Containment" then
+			containmentCount += 1
+		elseif card == "Dynamite" then
+			dynamiteCount += 1
+		end
+	end
+	
+	if containmentCount > dynamiteCount then
 		deckManager.SetTurnCount(deckManager.GetTurnCount() - 1)
 		table.insert(plrCards[index], card)
 		
@@ -651,7 +663,6 @@ function cardTakenFromDeck(index:number) : boolean
 		
 		return false
 	end
-
 
 	if table.find(plrCards[index], "Defuse") then
 		deckManager.SetTurnCount(deckManager.GetTurnCount() - 1)
@@ -728,7 +739,7 @@ function getDecision(index:number) : string?|{string}?
 	if not player then return nil end
 
 	local success, playerDecision:string|{string} = pcall(function()
-		return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "Take")
+		return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "Take", deckManager.GetTurnCount())
 	end)
 
 	if not success then
@@ -903,9 +914,17 @@ function runRoundLoop()
 		end
 
 		if not eliminated then
-			currentTurnIndex = (currentTurnIndex >= #playerTable) and 1 or currentTurnIndex + 1
+			if deckManager.ReverseOrder then
+				currentTurnIndex = (currentTurnIndex < #playerTable) and #playerTable or currentTurnIndex - 1
+			else
+				currentTurnIndex = (currentTurnIndex >= #playerTable) and 1 or currentTurnIndex + 1
+			end
 		elseif currentTurnIndex > #playerTable then
-			currentTurnIndex = 1
+			if deckManager.ReverseOrder then
+				currentTurnIndex = #playerTable
+			else
+				currentTurnIndex = 1
+			end
 		end
 
 		eliminated = turn(if deckManager["OverrideTurnIndex"] > 0 then deckManager["OverrideTurnIndex"] else currentTurnIndex)
