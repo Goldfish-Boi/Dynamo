@@ -8,10 +8,23 @@ local module = {}
 
 local deckManager:types.deckManager = require(script.Parent.Parent.Managers.DeckManager)
 
-function module.Main()
-	deckManager.ReverseOrder = not deckManager.ReverseOrderu
+function module.Main(index:number, decision:{string})
+	if not helpers.getPlrCardsProvider then return end
+
+	local plrCardsTable = helpers.getPlrCardsProvider()
+	local plrCards = plrCardsTable[index]
 	
-	deckManager.SetTurnCount(deckManager.GetTurnCount() - 1)
+	for i, card in ipairs(decision) do
+		local turnsLeft = deckManager.GetTurnCount()
+
+		if turnsLeft > 0 then
+			deckManager.ReverseOrder = not deckManager.ReverseOrder
+
+			deckManager.SetTurnCount(turnsLeft - 1)
+
+			table.remove(plrCards, table.find(plrCards, decision[i]))
+		end
+	end
 end
 
 return module
