@@ -65,7 +65,7 @@ const cardInfo = table.freeze({
 		
 		SkipsTurn = false,
 		Usable = true,
-		CanStack = false,
+		CanStack = true,
 		
 		UsuabilityType = "Defense",
 		BotUsuability = 15,
@@ -234,7 +234,7 @@ const cardInfo = table.freeze({
 		
 		SkipsTurn = false,
 		Usable = true,
-		CanStack = false,
+		CanStack = true,
 
 		UsuabilityType = "Offense",
 		BotUsuability = 20
