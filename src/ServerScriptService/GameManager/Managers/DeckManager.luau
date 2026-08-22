@@ -33,7 +33,7 @@ const cards = table.freeze({
 
 const variableCards = table.freeze({
 	{Name = "Skip", ChancePerPlr = 100, CanBecome = {"Ultra Skip"}, Chance = {20}},
-	--{Name = "Attack", ChancePerPlr = 1000, CanBecome = {"Targeted Attack"}, Chance = {100}},
+	{Name = "Attack", ChancePerPlr = 100, CanBecome = {"Targeted Attack"}, Chance = {33}},
 	--{Name = "Peek", ChancePerPlr = 100, CanBecome = {"Adjust"}, Chance = {50}},
 })
 
