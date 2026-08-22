@@ -76,21 +76,6 @@ function bezier(object:BasePart, tweenInfo:TweenInfo, p0:Vector3, p1:Vector3, p2
 	end)
 end
 
-function createRoundSnapshot() : types.roundSnapshot
-	local snapShot:types.roundSnapshot = {
-		currentTurnIndex = currentTurnIndex,
-		usedCardCount = usedCardCount,
-		initialDeckSize = initialDeckSize,
-		roundTime = roundTime,
-		deck = helpers.copyTable(deck),
-		pillarsTable = helpers.copyTable(pillarsTable),
-		playerTable = helpers.copyTable(playerTable),
-		plrCards = helpers.copyTable(plrCards),
-	}
-
-	return snapShot
-end
-
 function formatTime(seconds:number) : string
 	local minutes = tostring(math.floor(seconds / 60))
 	local remainingSeconds = math.floor(seconds % 60)
@@ -123,20 +108,14 @@ function removePlayerFromTable(index:number)
 			local primary = pillarsTable[index].PrimaryPart
 
 			if primary then
-				for i, card in ipairs(plrCards[index]) do
-					task.spawn(function()
-						transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+				replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = plrCards[index], TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125})
 
-						task.wait(1.5)
-
-						setUsedCardsModel({card})
-					end)
-
-					task.wait(0.125)
-				end
+				task.delay(1.5, function()
+					setUsedCardsModel(plrCards[index], nil, 0.125)
+				end)
 			end
 		end
-				
+		
 		--setUsedCardsModel(plrCards[index])
 		table.remove(plrCards, index)
 	end
@@ -213,7 +192,7 @@ function setDeckModel(updateType:string)
 	end
 end
 
-function setUsedCardsModel(cards:{string}, updateType:string?)
+function setUsedCardsModel(cards:{string}, updateType:string?, delayNumber:number?)
 	if updateType == "RemoveAll" then
 		cardsFolder.UsedCards:ClearAllChildren()
 		
@@ -239,6 +218,8 @@ function setUsedCardsModel(cards:{string}, updateType:string?)
 		end
 		
 		tweenService:Create(cardPart, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = Vector3.new(0.5, 14, 10)}):Play()
+		
+		if delayNumber then task.wait(delayNumber) end
 	end
 end
 
@@ -533,8 +514,8 @@ function eliminatePlayer(index:number, leaving:boolean?)
 		pillarToDestroy = pillarsFolder:FindFirstChild(playerName)
 		
 		if player then
-			pcall(function()
-				task.delay(3, function()
+			task.delay(3, function()
+				pcall(function()
 					replicatedStorage.Communicators.Remotes.Events.TransitionWithRound:FireClient(player)
 
 					player:LoadCharacterAsync()
@@ -542,58 +523,10 @@ function eliminatePlayer(index:number, leaving:boolean?)
 			end)
 		end
 	end
-
-	--[[if pillarToDestroy then
-		local explosionModule = pillarToDestroy:WaitForChild("ExplosionModule")::Instance
-		if explosionModule and explosionModule:IsA("ModuleScript") then
-			require(explosionModule).explode()
-		end
-	end]]--
 	
 	updatePlayerStatus(index, if leaving then "Disconnected" else "Off Duty")
 
 	removePlayerFromTable(index)
-end
-
-function transitionCard(card:string, from:Vector3, to:Vector3, parabolic:boolean?)
-	if not cardInfo[card] then return end
-	
-	local cardBillboard = serverStorage.ServerAssets.CardBillboard:Clone()
-	cardBillboard.Position = from
-	cardBillboard.BillboardGui.ImageLabel.Image = "rbxassetid://" .. cardInfo[card]["IconID"]
-	cardBillboard.BillboardGui.ImageLabel.Position = UDim2.fromScale(0.5, 1)
-	cardBillboard.Attachment0.Trail.Color = ColorSequence.new(cardInfo[card]["Colour"]::Color3)
-	cardBillboard.Parent = workspace
-	
-	task.spawn(function()
-		tweenService:Create(cardBillboard.BillboardGui.ImageLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.5)}):Play()
-		
-		task.wait(0.5)
-		
-		if not parabolic then
-			tweenService:Create(cardBillboard, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {Position = to}):Play()
-			tweenService:Create(cardBillboard.BillboardGui.ImageLabel, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.fromScale(0, 0)}):Play()
-		else
-			tweenService:Create(cardBillboard.BillboardGui.ImageLabel, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.fromScale(0, 0)}):Play()
-			bezier(cardBillboard, TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), from, Vector3.new(from.X + ((2 / 3) * (to.X - from.X)), (from.Y + ((1 / 3) * (to.Y - from.Y))) + 10, from.Z + ((2 / 3) * (to.Z - from.Z))), to)
-		end
-		
-		task.wait(1)
-		
-		local particleAttachment = serverStorage.ServerAssets.ParticleAttachment:Clone()
-		particleAttachment.Position = to
-		particleAttachment.Sparkles.Color = ColorSequence.new(cardInfo[card]["Colour"]::Color3)
-		particleAttachment.Shockwave.Color = ColorSequence.new(cardInfo[card]["Colour"]::Color3)
-		particleAttachment.Parent = workspace
-		
-		particleAttachment.Sparkles:Emit(15)
-		particleAttachment.Shockwave:Emit(1)
-		
-		task.wait(1)
-		
-		cardBillboard:Destroy()
-		particleAttachment:Destroy()
-	end)
 end
 
 function cardTakenFromDeck(index:number) : boolean
@@ -624,7 +557,7 @@ function cardTakenFromDeck(index:number) : boolean
 		local to = pillarsTable[index]::Model
 		
 		if to and to.PrimaryPart then
-			transitionCard("CardBack", from.Position + Vector3.new(0, 15, 0), to.PrimaryPart.Position + Vector3.new(0, 14, 0), true)
+			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = "CardBack", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = to.PrimaryPart.Position + Vector3.new(0, 14, 0), Parabolic = true})
 		end
 		
 		setDeckModel("RemoveFirst")
@@ -656,7 +589,7 @@ function cardTakenFromDeck(index:number) : boolean
 		local to = pillarsTable[index]::Model
 
 		if to and to.PrimaryPart then
-			transitionCard("CardBack", from.Position + Vector3.new(0, 15, 0), to.PrimaryPart.Position + Vector3.new(0, 14, 0), true)
+			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = "CardBack", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = to.PrimaryPart.Position + Vector3.new(0, 14, 0), Parabolic = true})
 		end
 		
 		setDeckModel("RemoveFirst")
@@ -670,7 +603,7 @@ function cardTakenFromDeck(index:number) : boolean
 		local primary = pillarsTable[index].PrimaryPart
 
 		if primary then
-			transitionCard("Defuse", primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = "Defuse", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), Parabolic = true})
 		end
 
 		task.spawn(function()
@@ -699,7 +632,7 @@ function cardTakenFromDeck(index:number) : boolean
 		if primary then
 			task.wait((#plrCards[index] + 1) * 0.125)
 			
-			transitionCard("Dynamite", from.Position + Vector3.new(0, 15, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = "Dynamite", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), Parabolic = true})
 		end
 	end)
 
@@ -749,7 +682,7 @@ function getDecision(index:number) : string?|{string}?
 	return playerDecision
 end
 
-function checkDecision(index:number, decision:string | {string} ) : boolean
+function checkDecision(index:number, decision:string|{string}) : boolean
 	local playerName = playerTable[index]
 	local isaPlayer, player = helpers.isPlayer(index)
 
@@ -759,7 +692,25 @@ function checkDecision(index:number, decision:string | {string} ) : boolean
 	end
 
 	if typeof(decision) == "table" then
-		if #decision == 1 then
+		local module = script.CardModules:FindFirstChild(decision[1])::Instance
+		if module then
+			require(script.CardModules:FindFirstChild(decision[1])::Instance).Main(index, decision)
+		end
+		
+		--[[local primary = pillarsTable[index].PrimaryPart
+
+		if primary then
+			transitionCard(decision[1], primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
+		end
+
+		task.spawn(function()
+			task.wait(1.5)
+			setUsedCardsModel(decision)
+		end)
+
+		table.remove(plrCards[index], table.find(plrCards[index], decision[i]))]]--
+		
+		--[[if #decision == 1 then
 			print(tostring(playerName) .. " has chosen: " .. decision[1])
 			
 			local module = script.CardModules:FindFirstChild(decision[1])::Instance
@@ -799,7 +750,7 @@ function checkDecision(index:number, decision:string | {string} ) : boolean
 				
 				table.remove(plrCards[index], table.find(plrCards[index], decision[i]))
 			end
-		end
+		end]]--
 		
 		return false
 	end
@@ -1054,39 +1005,27 @@ function initiateAction(index:number, actionInfo:types.ActionInfo)
 	if not primary then return end
 	
 	if actionInfo.Type == "Steal" then
-		task.spawn(function()
-			for i, card in actionInfo.Cards do
-				task.spawn(function()
-					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
-
-					task.wait(1.5)
-
-					setUsedCardsModel({card})
-				end)
-
-				table.remove(plrCards[index], table.find(plrCards[index], card))
-
-				task.wait(0.125)
-			end
+		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = actionInfo.Cards, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125})
+		
+		task.delay(1.5, function()
+			setUsedCardsModel(actionInfo.Cards, nil, 0.125)
 		end)
+		
+		for i, card in actionInfo.Cards do
+			table.remove(plrCards[index], table.find(plrCards[index], card))
+		end
 		
 		require(script.ActionModules.Steal).Steal(index, actionInfo)
 	elseif actionInfo.Type == "Triple Steal" then
-		task.spawn(function()
-			for i, card in actionInfo.Cards do
-				task.spawn(function()
-					transitionCard(card, primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
-
-					task.wait(1.5)
-
-					setUsedCardsModel({card})
-				end)
-
-				table.remove(plrCards[index], table.find(plrCards[index], card))
-
-				task.wait(0.125)
-			end
+		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = actionInfo.Cards, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125})
+		
+		task.delay(1.5, function()
+			setUsedCardsModel(actionInfo.Cards, nil, 0.125)
 		end)
+		
+		for i, card in actionInfo.Cards do
+			table.remove(plrCards[index], table.find(plrCards[index], card))
+		end
 		
 		require(script.ActionModules.Steal).TripleSteal(index, actionInfo)
 	end
