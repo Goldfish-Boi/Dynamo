@@ -1125,14 +1125,24 @@ cardActions.Use.Activated:Connect(function()
 	if decision == "Awaiting" and #cardsSelected > 0 then
 		local cardsToUse = table.clone(cardsSelected)
 		local cardsToSend = {}
+		
+		if #cardsSelected > 1 and cardInfo[cardsToUse[1].Name]["CanStack"] then
+			for i, card:Frame in ipairs(cardsToUse) do
+				local indexToRemove = table.find(cards, card)
+				if not indexToRemove then continue end
 
-		for i, card:Frame in ipairs(cardsToUse) do
-			local indexToRemove = table.find(cards, card)
-			if not indexToRemove then continue end
+				table.insert(cardsToSend, card.Name)
 
-			table.insert(cardsToSend, card.Name)
+				removeCard(indexToRemove)
+			end
+		else
+			local indexToRemove = table.find(cards, cardsToUse[1])
 
-			removeCard(indexToRemove)
+			table.insert(cardsToSend, cardsToUse[1].Name)
+			
+			if indexToRemove then
+				removeCard(indexToRemove)
+			end
 		end
 
 		enableTaking(false)
