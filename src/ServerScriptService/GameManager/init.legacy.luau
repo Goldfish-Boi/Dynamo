@@ -14,6 +14,7 @@ local require = require
 local universalInfo = require(replicatedStorage.Modules.UniversalInfo)
 local cardInfo = require(replicatedStorage.Modules.CardInfo)
 local deckManager = require(script.Managers.DeckManager)
+local effectManager = require(script.Managers.EffectManager)
 local botLogic = require(script.Managers.BotLogic)
 local helpers = require(script.Helpers)
 
@@ -57,25 +58,6 @@ function clearValues()
 	currentTurnIndex = 0
 end
 
-function bezier(object:BasePart, tweenInfo:TweenInfo, p0:Vector3, p1:Vector3, p2:Vector3)
-	local connection
-	local a = 0
-
-	connection = runService.Heartbeat:Connect(function(deltaTime:number)
-		a += math.clamp(deltaTime / tweenInfo.Time, 0, 1)
-		
-		if a > 1 and connection then
-			connection:Disconnect()
-			connection = nil
-		end
-		
-		local n = tweenService:GetValue(a, tweenInfo.EasingStyle, tweenInfo.EasingDirection)
-		
-		local position = ((1 - n) * (1 - n)) * p0 + 2 * (1 - n) * n * p1 + (n * n) * p2
-		object.Position = position
-	end)
-end
-
 function formatTime(seconds:number) : string
 	local minutes = tostring(math.floor(seconds / 60))
 	local remainingSeconds = math.floor(seconds % 60)
@@ -108,11 +90,10 @@ function removePlayerFromTable(index:number)
 			local primary = pillarsTable[index].PrimaryPart
 
 			if primary then
-				replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = plrCards[index], TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125})
-
-				task.delay(1.5, function()
-					setUsedCardsModel(plrCards[index], nil, 0.125)
-				end)
+				replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
+					{Type = "TransitionCard", Card = plrCards[index], TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125},
+					{Type = "SetUsedCards", Cards = plrCards[index], DelayNumber = 0.125, InitialDelayNumber = 1.5},
+				})
 			end
 		end
 		
@@ -192,7 +173,7 @@ function setDeckModel(updateType:string)
 	end
 end
 
-function setUsedCardsModel(cards:{string}, updateType:string?, delayNumber:number?)
+--[[function setUsedCardsModel(cards:{string}, updateType:string?, delayNumber:number?)
 	if updateType == "RemoveAll" then
 		cardsFolder.UsedCards:ClearAllChildren()
 		
@@ -221,7 +202,7 @@ function setUsedCardsModel(cards:{string}, updateType:string?, delayNumber:numbe
 		
 		if delayNumber then task.wait(delayNumber) end
 	end
-end
+end]]--
 
 function setPillars()
 	print(playerTable)
@@ -557,7 +538,7 @@ function cardTakenFromDeck(index:number) : boolean
 		local to = pillarsTable[index]::Model
 		
 		if to and to.PrimaryPart then
-			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = "CardBack", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = to.PrimaryPart.Position + Vector3.new(0, 14, 0), Parabolic = true})
+			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({{Type = "TransitionCard", Card = "CardBack", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = to.PrimaryPart.Position + Vector3.new(0, 14, 0), Parabolic = true}})
 		end
 		
 		setDeckModel("RemoveFirst")
@@ -589,7 +570,7 @@ function cardTakenFromDeck(index:number) : boolean
 		local to = pillarsTable[index]::Model
 
 		if to and to.PrimaryPart then
-			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = "CardBack", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = to.PrimaryPart.Position + Vector3.new(0, 14, 0), Parabolic = true})
+			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({{Type = "TransitionCard", Card = "CardBack", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = to.PrimaryPart.Position + Vector3.new(0, 14, 0), Parabolic = true}})
 		end
 		
 		setDeckModel("RemoveFirst")
@@ -603,13 +584,11 @@ function cardTakenFromDeck(index:number) : boolean
 		local primary = pillarsTable[index].PrimaryPart
 
 		if primary then
-			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = "Defuse", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), Parabolic = true})
+			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
+				{Type = "TransitionCard", Card = "Defuse", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), Parabolic = true},
+				{Type = "SetUsedCards", Cards = {"Defuse"}, InitialDelayNumber = 1.5},
+			})
 		end
-
-		task.spawn(function()
-			task.wait(1.5)
-			setUsedCardsModel({"Defuse"})
-		end)
 		
 		table.remove(plrCards[index], table.find(plrCards[index], "Defuse"))
 
@@ -632,13 +611,11 @@ function cardTakenFromDeck(index:number) : boolean
 		if primary then
 			task.wait((#plrCards[index] + 1) * 0.125)
 			
-			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = "Dynamite", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), Parabolic = true})
+			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
+				{Type = "TransitionCard", Card = "Dynamite", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), Parabolic = true},
+				{Type = "SetUsedCards", Cards = {"Dynamite"}, InitialDeckSize = 1.5}
+			})
 		end
-	end)
-
-	task.spawn(function()
-		task.wait(((#plrCards[index] + 1) * 0.125) + 1.5)
-		setUsedCardsModel({"Dynamite"})
 	end)
 	
 	task.wait(0.125)
@@ -866,17 +843,17 @@ function runRoundLoop()
 
 		if not eliminated then
 			if deckManager.ReverseOrder then
-				currentTurnIndex = (currentTurnIndex < #playerTable) and #playerTable or currentTurnIndex - 1
+				currentTurnIndex = (currentTurnIndex <= 1) and #playerTable or currentTurnIndex - 1
 			else
 				currentTurnIndex = (currentTurnIndex >= #playerTable) and 1 or currentTurnIndex + 1
 			end
-		elseif currentTurnIndex > #playerTable then
-			if deckManager.ReverseOrder then
-				currentTurnIndex = #playerTable
-			else
-				currentTurnIndex = 1
-			end
+		elseif currentTurnIndex > #playerTable and not deckManager.ReverseOrder then
+			currentTurnIndex = 1
+		elseif currentTurnIndex < 1 and deckManager.ReverseOrder then
+			currentTurnIndex = #playerTable
 		end
+		
+		print(currentTurnIndex)
 
 		eliminated = turn(if deckManager["OverrideTurnIndex"] > 0 then deckManager["OverrideTurnIndex"] else currentTurnIndex)
 	end
@@ -924,7 +901,11 @@ function endRound()
 	end)
 	
 	task.spawn(function()
-		setUsedCardsModel({}, "RemoveAll")
+		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
+			{Type = "SetUsedCards", UpdateType = "RemoveAll"},
+		})
+		--effectManager.setUsedCardsModel({}, "RemoveAll")
+		--setUsedCardsModel({}, "RemoveAll")
 	end)
 		
 	turnIndicator.Transparency = 1
@@ -1005,11 +986,10 @@ function initiateAction(index:number, actionInfo:types.ActionInfo)
 	if not primary then return end
 	
 	if actionInfo.Type == "Steal" then
-		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = actionInfo.Cards, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125})
-		
-		task.delay(1.5, function()
-			setUsedCardsModel(actionInfo.Cards, nil, 0.125)
-		end)
+		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
+			{Type = "TransitionCard", Card = actionInfo.Cards, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125},
+			{Type = "SetUsedCards", Cards = actionInfo.Cards, UpdateType = nil, DelayNumber = 0.125, InitialDelayNumber = 1.5},
+		})
 		
 		for i, card in actionInfo.Cards do
 			table.remove(plrCards[index], table.find(plrCards[index], card))
@@ -1017,11 +997,10 @@ function initiateAction(index:number, actionInfo:types.ActionInfo)
 		
 		require(script.ActionModules.Steal).Steal(index, actionInfo)
 	elseif actionInfo.Type == "Triple Steal" then
-		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({Type = "TransitionCard", Card = actionInfo.Cards, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125})
-		
-		task.delay(1.5, function()
-			setUsedCardsModel(actionInfo.Cards, nil, 0.125)
-		end)
+		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
+			{Type = "TransitionCard", Card = actionInfo.Cards, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125},
+			{Type = "SetUsedCards", Cards = actionInfo.Cards, UpdateType = nil, DelayNumber = 0.125, InitialDelayNumber = 1.5},
+		})
 		
 		for i, card in actionInfo.Cards do
 			table.remove(plrCards[index], table.find(plrCards[index], card))
