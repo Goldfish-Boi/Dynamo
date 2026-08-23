@@ -14,7 +14,6 @@ local require = require
 local universalInfo = require(replicatedStorage.Modules.UniversalInfo)
 local cardInfo = require(replicatedStorage.Modules.CardInfo)
 local deckManager = require(script.Managers.DeckManager)
-local effectManager = require(script.Managers.EffectManager)
 local botLogic = require(script.Managers.BotLogic)
 local helpers = require(script.Helpers)
 
