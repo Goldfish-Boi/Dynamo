@@ -7,6 +7,9 @@ local runService = game:GetService("RunService")
 
 local cardInfo:{[string]:any} = require(replicatedStorage.Modules.CardInfo)::{[string]:any}
 
+local roundFolder = workspace.Round
+local cardsFolder = roundFolder.Cards
+
 function bezier(object:BasePart, tweenInfo:TweenInfo, p0:Vector3, p1:Vector3, p2:Vector3)
 	local connection
 	local a = 0
@@ -67,6 +70,37 @@ function transitionCard(card:string, tweenInfo:TweenInfo, from:Vector3, to:Vecto
 	end)
 end
 
+function setUsedCardsModel(cards:{string}?, updateType:string?, delayNumber:number?, initialDelayNumber:number?)
+	if updateType == "RemoveAll" then
+		cardsFolder.UsedCards:ClearAllChildren()
+
+		return
+	end
+
+	if (not cards) or #cards == 0 then return end
+	
+	if initialDelayNumber then task.wait(initialDelayNumber) end
+	
+	for i, card in ipairs(cards) do
+		local cardPart = workspace.UsedCards:Clone()
+		cardPart.Name = card
+		cardPart.Position = workspace.UsedCards.Position + Vector3.new(0, workspace.UsedCards.Position.Y + (0.5 * #cardsFolder.UsedCards:GetChildren()), 0)
+		cardPart.Color = cardInfo[card]["Colour"]
+		cardPart.Orientation = Vector3.new(0, math.random(-100, 100) / 10, 90)
+		cardPart.Transparency = 0
+		cardPart.Size = Vector3.new(0.5, 1.4, 1)
+		cardPart.Parent = cardsFolder.UsedCards
+
+		if cardInfo[card]["IconID"] then
+			cardPart.Decal.ColorMap = "rbxassetid://" .. cardInfo[card]["IconID"]
+		end
+
+		tweenService:Create(cardPart, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = Vector3.new(0.5, 14, 10)}):Play()
+
+		if delayNumber then task.wait(delayNumber) end
+	end
+end
+
 type transitionCardInfo = {
 	Type:"TransitionCard",
 	Card:string|{string},
@@ -76,8 +110,15 @@ type transitionCardInfo = {
 	Parabolic:boolean?,
 	Delay:number?,
 }
+type setUsedCardsInfo = {
+	Type:"SetUsedCards",
+	Cards:{string},
+	UpdateType:string?,
+	DelayNumber:number?,
+	InitialDelayNumber:number?,
+}
 
-type effectInfo = transitionCardInfo
+type effectInfo = transitionCardInfo | setUsedCardsInfo
 
 function getLocation(to:Vector3|string) : Vector3
 	local newTo:Vector3
@@ -95,17 +136,22 @@ function getLocation(to:Vector3|string) : Vector3
 	return newTo
 end
 
-replicatedStorage.Communicators.Remotes.Events.CreateClientEffect.OnClientEvent:Connect(function(effect:effectInfo)
-	if effect.Type == "TransitionCard" then
-		
-		if typeof(effect.Card) == "table" then
-			for i, cardToTransition in ipairs(effect.Card) do
-				transitionCard(cardToTransition, effect.TweenInfo, effect.From, getLocation(effect.To), effect.Parabolic)
-				
-				task.wait(effect.Delay or 0.1)
+replicatedStorage.Communicators.Remotes.Events.CreateClientEffect.OnClientEvent:Connect(function(effect:{effectInfo})
+	for i, effectToDo in ipairs(effect) do
+		task.spawn(function()
+			if effectToDo.Type == "TransitionCard" then
+				if typeof(effectToDo.Card) == "table" then
+					for i, cardToTransition in ipairs(effectToDo.Card) do
+						transitionCard(cardToTransition, effectToDo.TweenInfo, effectToDo.From, getLocation(effectToDo.To), effectToDo.Parabolic)
+
+						task.wait(effectToDo.Delay or 0.1)
+					end
+				else
+					transitionCard(effectToDo.Card, effectToDo.TweenInfo, effectToDo.From, getLocation(effectToDo.To), effectToDo.Parabolic)
+				end
+			elseif effectToDo.Type == "SetUsedCards" then
+				setUsedCardsModel(effectToDo.Cards, effectToDo.UpdateType, effectToDo.DelayNumber, effectToDo.InitialDelayNumber)
 			end
-		else
-			transitionCard(effect.Card, effect.TweenInfo, effect.From, getLocation(effect.To), effect.Parabolic)
-		end
+		end)
 	end
 end)
