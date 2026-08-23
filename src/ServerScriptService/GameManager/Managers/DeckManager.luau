@@ -19,7 +19,7 @@ const cards = table.freeze({
 	{Name = "Cake", ChancePerPlr = 100},
 	{Name = "Taco", ChancePerPlr = 100},
 	{Name = "Choco Milk", ChancePerPlr = 100},
-	{Name = "Reverse", ChancePerPlr = 75},
+	{Name = "Reverse", ChancePerPlr = 750},
 	--{Name = "Request", ChancePerPlr = 125},
 	--{Name = "Deny", ChancePerPlr = 120},
 	--{Name = "Analyse", ChancePerPlr = 80},
