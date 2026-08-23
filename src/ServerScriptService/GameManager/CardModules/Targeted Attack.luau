@@ -6,11 +6,15 @@ local module = {}
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local deckManager = require(script.Parent.Parent.Managers.DeckManager)
+local effectManager = require(script.Parent.Parent.Managers.EffectManager)
 local helpers = require(script.Parent.Parent.Helpers)
 
 function module.Main(index:number)
+	if not helpers.getPillarsTable then return end
+	
 	local currentTurnCount = deckManager.GetTurnCount()
 	
+	local pillarsTable = helpers.getPillarsTable()
 	local isaPlayer, player = helpers.isPlayer(index)
 	
 	if currentTurnCount == 1 then
@@ -37,6 +41,15 @@ function module.Main(index:number)
 	workspace.Sounds.Attack:Play()
 	
 	deckManager["IsRoundTerminated"] = true
+	
+	local primary = pillarsTable[index].PrimaryPart
+
+	if primary then
+		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
+			{Type = "TransitionCard", Card = "Targeted Attack", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (#workspace.Round.Cards.UsedCards:GetChildren())), 0), Parabolic = true},
+			{Type = "SetUsedCards", Cards = {"Targeted Attack"}, InitialDelayNumber = 1.5}
+		})	
+	end
 end
 
 return module
