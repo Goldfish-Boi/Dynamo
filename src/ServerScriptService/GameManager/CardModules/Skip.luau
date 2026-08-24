@@ -7,7 +7,6 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local helpers = require(script.Parent.Parent.Helpers)
 local deckManager = require(script.Parent.Parent.Managers.DeckManager)
-local effectManager = require(script.Parent.Parent.Managers.EffectManager)
 
 function module.Main(index:number, decision:{string})
 	if not helpers.getPlrCardsProvider or not helpers.getPillarsTable then return end
@@ -15,6 +14,8 @@ function module.Main(index:number, decision:{string})
 	local pillarsTable = helpers.getPillarsTable()
 	local plrCardsTable = helpers.getPlrCardsProvider()
 	local plrCards = plrCardsTable[index]
+	
+	local isaPlayer, player = helpers.isPlayer(index)
 
 	local cardsUsed = 0
 
@@ -28,6 +29,10 @@ function module.Main(index:number, decision:{string})
 			
 			table.remove(plrCards, table.find(plrCards, decision[i]))
 		end
+	end
+	
+	if #decision > 1 and isaPlayer and player then
+		replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(player, "RemoveSelected", nil, cardsUsed)
 	end
 
 	local primary = pillarsTable[index].PrimaryPart
