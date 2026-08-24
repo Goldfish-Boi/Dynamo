@@ -34,7 +34,7 @@ local intermissionLength:number = 0
 local bombDutyCountdownLength:number = 10
 local usedCardCount:number = 0
 
-local botCountOverride:number? = nil
+local botCountOverride:number? = 15
 local initialDeckSize:number?
 local roundTime:number?
 
@@ -1010,6 +1010,20 @@ function initiateAction(index:number, actionInfo:types.ActionInfo)
 end
 
 --------------------------------- Connections ---------------------------------
+
+replicatedStorage.Communicators.Remotes.Functions.ClientInfoRequester.OnServerInvoke = function(Player:Player, RequestType:string) : {[string]:number} | number
+	if RequestType == "CardCounts" then
+		local counts:{[string]:number} = {}
+		
+		for i, cards in ipairs(plrCards) do
+			counts[playerTable[i]] = #cards
+		end
+		
+		return counts
+	else
+		return -1
+	end
+end
 
 replicatedStorage.Communicators.Remotes.Events.InitiateAction.OnServerEvent:Connect(function(plr:Player, actionInfo:types.ActionInfo)
 	local index = table.find(playerTable, plr.Name)
