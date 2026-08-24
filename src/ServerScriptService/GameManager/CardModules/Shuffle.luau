@@ -9,7 +9,6 @@ local module = {}
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local deckManager = require(script.Parent.Parent.Managers.DeckManager)
-local effectManager = require(script.Parent.Parent.Managers.EffectManager)
 
 function module.Main(index:number)
 	if (not helpers.getDeck) or (not helpers.getPillarsTable) then warn("No Helpers registered") return end

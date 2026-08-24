@@ -6,7 +6,6 @@ local module = {}
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local deckManager = require(script.Parent.Parent.Managers.DeckManager)
-local effectManager = require(script.Parent.Parent.Managers.EffectManager)
 local helpers = require(script.Parent.Parent.Helpers)
 
 function module.Main(index:number)
@@ -25,7 +24,7 @@ function module.Main(index:number)
 	
 	if isaPlayer and player then
 		local success, targetIndex = pcall(function()
-			return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "PickPlayer", true)::string
+			return replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision:InvokeClient(player, "PickPlayer", false, true)::string
 		end)
 		
 		if success then

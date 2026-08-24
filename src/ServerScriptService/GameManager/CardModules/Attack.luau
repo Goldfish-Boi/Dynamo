@@ -7,7 +7,6 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local helpers = require(script.Parent.Parent.Helpers)
 local deckManager = require(script.Parent.Parent.Managers.DeckManager)
-local effectManager = require(script.Parent.Parent.Managers.EffectManager)
 
 function module.Main(index:number)
 	if not helpers.getPillarsTable then return end

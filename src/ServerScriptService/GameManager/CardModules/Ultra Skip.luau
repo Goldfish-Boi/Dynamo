@@ -6,7 +6,6 @@ local module = {}
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local deckManager = require(script.Parent.Parent.Managers.DeckManager)
-local effectManager = require(script.Parent.Parent.Managers.EffectManager)
 local helpers = require(script.Parent.Parent.Helpers)
 
 function module.Main(index:number)
