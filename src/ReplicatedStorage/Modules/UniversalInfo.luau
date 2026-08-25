@@ -91,6 +91,11 @@ const univeralInfo = table.freeze({
 				},
 			},
 		},
+		["P002"] = {
+			Name = "Doomspire",
+			Price = 5000,
+			Category = "Epic",
+		},
 	},
 	["Emotes"] = {
 		["Em001"] = {
