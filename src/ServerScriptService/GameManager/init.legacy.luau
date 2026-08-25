@@ -11,6 +11,7 @@ local players = game:GetService("Players")
 local teams = game:GetService("Teams")
 
 local require = require
+local data = require(script.Parent.DataInit.Data)
 local universalInfo = require(replicatedStorage.Modules.UniversalInfo)
 local cardInfo = require(replicatedStorage.Modules.CardInfo)
 local deckManager = require(script.Managers.DeckManager)
@@ -32,10 +33,8 @@ local playerStatus = workspace.Lobby.ServerDataSigns.PlayerStatuses
 local currentTurnIndex:number = 0
 local intermissionLength:number = 0
 local bombDutyCountdownLength:number = 10
-local usedCardCount:number = 0
 
 local botCountOverride:number? = 15
-local initialDeckSize:number?
 local roundTime:number?
 
 local deck:{string} = {}
@@ -43,6 +42,8 @@ local tweenTable:{Tween} = {}
 local pillarsTable:{Model} = {}
 local playerTable:{string} = {}
 local plrCards:{[number]:{string}} = {}
+
+local plrData = data.returnAllData()
 
 --------------------------------- Helper Functions ---------------------------------
 
@@ -52,8 +53,6 @@ function clearValues()
 	playerTable = {}
 	plrCards = {}
 	
-	initialDeckSize = nil
-	usedCardCount = 0
 	currentTurnIndex = 0
 end
 
@@ -209,12 +208,30 @@ function setPillars()
 	for i, playerName in ipairs(playerTable) do
 		--task.wait(1)
 		
-		local pillar = replicatedStorage.Assets.Pillars.Test:Clone()
+		local isaPlayer, player:Player = helpers.isPlayer(i)
+		
+		local pillar
+		--local pillar = replicatedStorage.Assets.Pillars.Test:Clone()
+		
+		if isaPlayer and player and plrData[player.UserId] and plrData[player.UserId]["Equipped"] and plrData[player.UserId]["Equipped"]["Pillar"] then
+			local pillarToClone = replicatedStorage.Assets.Pillars:FindFirstChild(universalInfo["Pillars"][plrData[player.UserId]["Equipped"]["Pillar"]]["Name"])::Model?
+			
+			if pillarToClone then
+				pillar = pillarToClone:Clone()
+			else
+				pillar = replicatedStorage.Assets.Pillars.Test:Clone()
+			end
+		else
+			pillar = replicatedStorage.Assets.Pillars.Test:Clone()
+		end
+	
 		local circumference = 25 * #playerTable
 		local radius = math.max(circumference / (2 * math.pi), 50)
-		local isaPlayer, player = helpers.isPlayer(i)
 
 		if not pillar.PrimaryPart then continue end
+		
+		local playerSpawn = pillar:FindFirstChild("PlayerSpawn")::BasePart?
+		if not playerSpawn then continue end
 
 		pillarsTable[i] = pillar
 		pillar:PivotTo(CFrame.new(Vector3.new(workspace.Origin.Position.X, pillar.PrimaryPart.Position.Y, workspace.Origin.Position.Z)))
@@ -228,7 +245,7 @@ function setPillars()
 		if not isaPlayer then
 			local bot = replicatedStorage.Assets.Round.Bot:Clone()
 			bot.Name = playerName
-			bot:PivotTo(pillar.PlayerSpawn.CFrame)
+			bot:PivotTo(playerSpawn.CFrame)
 			bot:SetAttribute("Aggression", math.random(1, 9))
 			bot.Parent = botsFolder
 			pillar.Name = playerName
@@ -240,16 +257,16 @@ function setPillars()
 		
 		pillar.Name = player.Name
 
-		if not player.Character then return end
+		if not player.Character then continue end
 		
 		local humanoid = player.Character:FindFirstChildOfClass("Humanoid")::Humanoid?
 		local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")::BasePart?
 
-		if (not humanoidRootPart) or (not humanoid) then return end
+		if (not humanoidRootPart) or (not humanoid) then continue end
 		
 		humanoid.PlatformStand = true
 		humanoid.JumpHeight = 0
-		humanoidRootPart.CFrame = pillar.PlayerSpawn.CFrame
+		humanoidRootPart.CFrame = playerSpawn.CFrame
 		humanoidRootPart.Anchored = true
 
 		replicatedStorage.Communicators.Remotes.Events.GiveDeck:FireClient(player, plrCards[i])
@@ -479,20 +496,16 @@ function eliminatePlayer(index:number, leaving:boolean?)
 	if not playerName then return end
 	
 	local isaPlayer, player = helpers.isPlayer(index)
-	local pillarToDestroy
 	
 	replicatedStorage.Communicators.Remotes.Events.PlayerEliminated:FireAllClients(pillarsTable[index])
 	
 	if not isaPlayer then
-		pillarToDestroy = pillarsFolder:FindFirstChild(playerName)
-		
 		local bot = botsFolder:FindFirstChild(playerName)
+		
 		if bot then 
 			bot:Destroy() 
 		end
 	else
-		pillarToDestroy = pillarsFolder:FindFirstChild(playerName)
-		
 		if player then
 			task.delay(3, function()
 				pcall(function()
@@ -505,6 +518,8 @@ function eliminatePlayer(index:number, leaving:boolean?)
 	end
 	
 	updatePlayerStatus(index, if leaving then "Disconnected" else "Off Duty")
+	
+	if table.find(playerTable, playerName) ~= index then return end
 
 	removePlayerFromTable(index)
 end
@@ -584,7 +599,7 @@ function cardTakenFromDeck(index:number) : boolean
 
 		if primary then
 			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
-				{Type = "TransitionCard", Card = "Defuse", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), Parabolic = true},
+				{Type = "TransitionCard", Card = "Defuse", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true},
 				{Type = "SetUsedCards", Cards = {"Defuse"}, InitialDelayNumber = 1.5},
 			})
 		end
@@ -611,7 +626,7 @@ function cardTakenFromDeck(index:number) : boolean
 			task.wait((#plrCards[index] + 1) * 0.125)
 			
 			replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
-				{Type = "TransitionCard", Card = "Dynamite", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), Parabolic = true},
+				{Type = "TransitionCard", Card = "Dynamite", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = from.Position + Vector3.new(0, 15, 0), To = "UsedCards", Parabolic = true},
 				{Type = "SetUsedCards", Cards = {"Dynamite"}, InitialDeckSize = 1.5}
 			})
 		end
@@ -668,6 +683,16 @@ function checkDecision(index:number, decision:string|{string}) : boolean
 	end
 
 	if typeof(decision) == "table" then
+		local currentCards = helpers.copyTable(plrCards[index])
+
+		for i, card in ipairs(decision) do
+			if table.find(currentCards, card) then
+				table.remove(currentCards, table.find(currentCards, card))
+			else
+				return true
+			end
+		end
+		
 		local module = script.CardModules:FindFirstChild(decision[1])::Instance
 		if module then
 			require(script.CardModules:FindFirstChild(decision[1])::Instance).Main(index, decision)
@@ -796,11 +821,12 @@ function turn(index:number) : boolean
 end
 
 function beginRound()
+	plrData = data.returnAllData()
+	
 	roundTime = workspace.DistributedGameTime
 	
 	plrCards = deckManager.CreatePlayerDecks(#playerTable)
 	deck = deckManager.Shuffle(deckManager.CreateDeck(#playerTable))
-	initialDeckSize = #deck
 	
 	print(deck)
 	
