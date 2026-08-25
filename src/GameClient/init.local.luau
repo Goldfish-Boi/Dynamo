@@ -727,7 +727,7 @@ function deselectAllCards(silent:boolean?, hideSound:boolean?)
 	updateCardActions(nil)
 end
 
-function terminateDecision(bypassCameraReset:boolean?)
+function terminateDecision()
 	if decision then
 		if typeof(decision) == "string" then
 			if cardInfo[decision] and cardInfo[decision]["SkipsTurn"] == false then
@@ -743,7 +743,7 @@ function terminateDecision(bypassCameraReset:boolean?)
 	decision = nil
 	enableTaking(false)
 	
-	if workspace.Camera.CameraType == Enum.CameraType.Scriptable and not bypassCameraReset then
+	if workspace.Camera.CameraType == Enum.CameraType.Scriptable then
 		task.delay(0.5, function()
 			workspace.Camera.CameraType = Enum.CameraType.Custom
 			originalCameraCFrame = nil
@@ -847,7 +847,7 @@ function decisionTake(turnCount:number) : string | {string}
 			print(decision)
 
 			task.defer(function()			
-				terminateDecision((typeof(decision) == "table" and decision[1] and decision[1] == "Targeted Attack" and cardInfo[decision[1]]) or turnCount > 1)
+				terminateDecision()
 			end)
 
 			return decision
@@ -855,7 +855,7 @@ function decisionTake(turnCount:number) : string | {string}
 
 		if antiInactivityCountdown == 0 then
 			task.defer(function()
-				terminateDecision((typeof(decision) == "table" and decision[1] and decision[1] == "Targeted Attack" and cardInfo[decision[1]]) or turnCount > 1)
+				terminateDecision()
 			end)
 
 			return "AFK"
@@ -863,7 +863,7 @@ function decisionTake(turnCount:number) : string | {string}
 	end
 
 	task.defer(function()
-		terminateDecision((typeof(decision) == "table" and decision[1] and decision[1] == "Targeted Attack" and cardInfo[decision[1]]) or turnCount > 1)
+		terminateDecision()
 	end)
 
 	return "AFK"
