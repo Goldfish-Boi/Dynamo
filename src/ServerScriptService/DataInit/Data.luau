@@ -33,6 +33,10 @@ function copyTable(t:{any}) : {[any]:any}
 	return copy
 end
 
+function dataModule.returnAllData()
+	return tablePlayerData
+end
+
 function dataModule.returnPlayerData(plr:Player, returnType:string) : {[string]:any} | string
 	local attempts = 0
 	
