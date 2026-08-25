@@ -89,7 +89,7 @@ function setUsedCardsModel(cards:{string}?, updateType:string?, delayNumber:numb
 		cardPart.Orientation = Vector3.new(0, math.random(-100, 100) / 10, 90)
 		cardPart.Transparency = 0
 		cardPart.Size = Vector3.new(0.5, 1.4, 1)
-		cardPart.Parent = cardsFolder.UsedCards
+		cardPart.Parent = workspace.Round.Cards.UsedCards
 
 		if cardInfo[card]["IconID"] then
 			cardPart.Decal.ColorMap = "rbxassetid://" .. cardInfo[card]["IconID"]
