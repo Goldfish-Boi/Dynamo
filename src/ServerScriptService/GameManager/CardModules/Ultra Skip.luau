@@ -19,7 +19,7 @@ function module.Main(index:number)
 
 	if primary then
 		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
-			{Type = "TransitionCard", Card = "Ultra Skip", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (#workspace.Round.Cards.UsedCards:GetChildren())), 0), Parabolic = true},
+			{Type = "TransitionCard", Card = "Ultra Skip", TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true},
 			{Type = "SetUsedCards", Cards = {"Ultra Skip"}, InitialDelayNumber = 1.5}
 		})
 	end
