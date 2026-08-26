@@ -31,10 +31,10 @@ local circleTemplate = mainScreen.SurfaceGui.Circles.CircleTemplate
 local playerStatus = workspace.Lobby.ServerDataSigns.PlayerStatuses
 
 local currentTurnIndex:number = 0
-local intermissionLength:number = 0
-local bombDutyCountdownLength:number = 10
+local intermissionLength:number = 10
+local bombDutyCountdownLength:number = 0
 
-local botCountOverride:number? = 15
+local botCountOverride:number? = nil
 local roundTime:number?
 
 local deck:{string} = {}
@@ -424,6 +424,8 @@ function updatePlayerStatus(index:number, status:string)
 end
 
 function moveTurnIndicator(index:number, tween:boolean?)
+	if not playerTable[index] then return end
+	
 	local isaPlayer, player = helpers.isPlayer(index)
 	
 	local primary
@@ -848,6 +850,10 @@ function beginRound()
 	task.spawn(function()
 		tweenModel(workspace.Lobby.GateRight, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 30.5, 8))
 	end)
+	
+	task.spawn(function()
+		tweenModel(workspace.Lobby.Platform, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 1.25, 0))
+	end)
 end
 
 function runRoundLoop()
@@ -965,6 +971,10 @@ function gameLoop()
 			tweenModel(workspace.Lobby.GateRight, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 30.5, 22))
 		end)
 		
+		task.spawn(function()
+			tweenModel(workspace.Lobby.Platform, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 28.25, 0))
+		end)
+		
 		for countDown = bombDutyCountdownLength, 1, -1 do
 			mainScreen.SurfaceGui.TextLabel1.Text = "Bomb duty in " .. tostring(countDown) .. "s"
 			task.wait(1)
@@ -974,9 +984,44 @@ function gameLoop()
 		
 		setTweenState(false)
 		
-		for i, player in ipairs(players:GetPlayers()) do
+		local nearbyPlayers:{Player} = {}
+		
+		repeat
+			task.wait(0.25)
+			
+			local params = OverlapParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params.ExcludeInstances = workspace.Lobby:GetDescendants()
+
+			local touchingParts = workspace:GetPartBoundsInBox(workspace.Lobby.Platform:GetPivot(), Vector3.new(30, 30, 30), params)
+			
+			for i, part in ipairs(touchingParts) do
+				if (not part.Parent) or (not part.Parent.Parent) then continue end
+				
+				local humanoid = part.Parent:FindFirstChildOfClass("Humanoid") or part.Parent.Parent:FindFirstChildOfClass("Humanoid")
+				if (not humanoid) or humanoid.Health <= 0 then continue end
+				
+				local char = humanoid.Parent
+				if (not char) or (not char:IsA("Model")) then continue end
+				
+				local plr = game.Players:GetPlayerFromCharacter(char)
+				if not plr then continue end
+				
+				if table.find(nearbyPlayers, plr) then continue end
+				
+				table.insert(nearbyPlayers, plr)
+			end
+			
+			print(#nearbyPlayers)
+		until #nearbyPlayers > 0
+		
+		for i, player in ipairs(nearbyPlayers) do
 			table.insert(playerTable, player.Name)
 		end
+		
+		--[[for i, player in ipairs(players:GetPlayers()) do
+			table.insert(playerTable, player.Name)
+		end]]--
 		
 		local numberOfBots = botCountOverride or math.max(4 - #playerTable, 0)
 		
