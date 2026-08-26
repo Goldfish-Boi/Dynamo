@@ -41,7 +41,7 @@ function module.Main(index:number, decision:{string})
 		local cardsToUse = {}
 
 		for i = 1, cardsUsed do
-			table.insert(cardsToUse, "Reverse")
+			table.insert(cardsToUse, "Skip")
 		end
 
 		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
