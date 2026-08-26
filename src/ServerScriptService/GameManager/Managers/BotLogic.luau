@@ -114,6 +114,8 @@ function botLogic.Play(bot:Instance, hand:{string}, plrCount:number) : string
 	local steals = {}
 	local tripleSteals = {}
 	
+	if not hand then return "Take" end
+	
 	if #hand ~= 0 then
 		local cardsChecked:{string} = {}
 		
