@@ -52,7 +52,7 @@ function module.Main(index:number, decision:{string})
 		end
 		
 		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
-			{Type = "TransitionCard", Card = cardsToUse, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = "UsedCards", Parabolic = true, Delay = 0.125},
+			{Type = "TransitionCard", Card = cardsToUse, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125},
 			{Type = "SetUsedCards", Cards = cardsToUse, DelayNumber = 0.125, InitialDelayNumber = 1.5}
 		})
 	end
