@@ -123,15 +123,19 @@ type effectInfo = transitionCardInfo | setUsedCardsInfo
 function getLocation(to:Vector3|string) : Vector3
 	local newTo:Vector3
 	
-	if typeof(to) == "Vector3" then
-		newTo = to
-	else
+	--print(to)
+	
+	if typeof(to) == "string" then
 		if to == "UsedCards" then
-			newTo = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (#workspace.UsedCards:GetChildren())), 0)
+			newTo = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (#workspace.Round.Cards.UsedCards:GetChildren())), 0)
 		else
 			newTo = workspace.Origin.Position
 		end
+	else
+		newTo = to
 	end
+	
+	--print(newTo)
 	
 	return newTo
 end
