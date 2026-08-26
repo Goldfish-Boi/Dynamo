@@ -32,7 +32,7 @@ local cards:{Frame} = {}
 local cardsSelected:{Frame} = {}
 
 local dragTarget:UDim2?
-local decision:string|{string}|number?
+local decision:(string|{string}|number)?
 local action:(number | string)?
 
 local originalCameraCFrame:CFrame? = nil
@@ -561,7 +561,7 @@ function addCard(card:string | {string})
 	
 	if cardInfo[card]["IconID"] then
 		newCard.Icon.Image = "rbxassetid://" .. cardInfo[card]["IconID"]
-		newCard.Icon.BackgroundColor3 = Color3.new(0, 0, 0)
+		newCard.Icon.BackgroundTransparency = 1
 	else
 		newCard.Icon.BackgroundColor3 = cardInfo[card]["Colour"]
 		newCard.Icon.ImageTransparency = 1
@@ -749,6 +749,8 @@ function terminateDecision()
 			originalCameraCFrame = nil
 		end)
 		
+		print("Terminate")
+		
 		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
 	end
 
@@ -845,16 +847,21 @@ function decisionTake(turnCount:number) : string | {string}
 	while task.wait() do
 		if decision and decision ~= "Awaiting" then
 			print(decision)
-
-			task.defer(function()			
-				terminateDecision()
-			end)
+			
+			local decisioncheck = decision::any
+			
+			if typeof(decisioncheck) == "table" and (not table.find(decisioncheck, "Targeted Attack")) then
+				task.defer(function()
+					terminateDecision()
+				end)
+			end
 
 			return decision
 		end
 
 		if antiInactivityCountdown == 0 then
 			task.defer(function()
+				print("AFK")
 				terminateDecision()
 			end)
 
@@ -863,6 +870,7 @@ function decisionTake(turnCount:number) : string | {string}
 	end
 
 	task.defer(function()
+		print("TypeCheck")
 		terminateDecision()
 	end)
 
@@ -885,7 +893,11 @@ function decisionSteal(cardCount:number) : number | string
 	
 	for i, child in ipairs(gui.StealCardContainer:GetChildren()) do
 		if not child:IsA("Frame") then continue end
-
+		
+		if cardRestState[child] then
+			cardRestState[child] = nil
+		end
+		
 		child:Destroy()
 	end
 	
@@ -903,7 +915,41 @@ function decisionSteal(cardCount:number) : number | string
 		newCard.Name = tostring(count)
 
 		newCard.Parent = gui.StealCardContainer
+		
+		newCard.MouseMoved:Connect(function()
+			if hoveredCard == newCard or (hoveredCard and hoveredCard.ZIndex > newCard.ZIndex) then return end
+			
+			local rest = cardRestState[newCard] or {rotation = 0, yOffset = 0}
+			
+			if hoveredCard and hoveredCard.ZIndex < newCard.ZIndex and (not table.find(cardsSelected, hoveredCard)) then
+				hoverCard(hoveredCard, false)
+			end
 
+			hoveredCard = newCard
+			
+			local icon = newCard.Icon
+			if not icon then return end
+
+			tweenService:Create(icon, TweenInfo.new(0.125, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, math.min(0.5 + rest.yOffset + 0.375, 1)), Rotation = 0}):Play()
+			--hoverCard(newCard, true)
+		end)
+
+		newCard.MouseLeave:Connect(function()
+			if table.find(cardsSelected, newCard) or dragConnection then return end
+			
+			local rest = cardRestState[newCard] or {rotation = 0, yOffset = 0}
+
+			if hoveredCard == newCard then
+				hoveredCard = nil
+			end
+			
+			local icon = newCard.Icon
+			if not icon then return end
+			
+			tweenService:Create(icon, TweenInfo.new(0.125, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.5 + rest.yOffset), Rotation = rest.rotation}):Play()
+			--hoverCard(newCard, false)
+		end)
+		
 		newCard.Icon.Activated:Connect(function()
 			if action == "Awaiting" then
 				action = count
@@ -914,6 +960,8 @@ function decisionSteal(cardCount:number) : number | string
 
 		local rotation = t * 10
 		local yOffset = (t * t) * 0.2
+		
+		cardRestState[newCard] = {rotation = -rotation, yOffset = -yOffset}
 
 		newCard.Icon.Position = UDim2.fromScale(0.5, 0.5 - yOffset)
 		newCard.Icon.Rotation = -rotation
@@ -922,7 +970,7 @@ function decisionSteal(cardCount:number) : number | string
 	updateStealScaling()
 
 	tweenService:Create(gui.StealCardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.33)}):Play()
-	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 1.25)}):Play()
+	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 2)}):Play()
 
 	activateCards(false)
 	
@@ -997,11 +1045,11 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 	local target = nil
 	local antiAFK = false
 
-	local billboards:{BillboardGui} = {}
+	local buttons:{TextButton} = {}
 
 	workspace.Camera.CameraType = Enum.CameraType.Scriptable
 
-	tweenService:Create(cardContainer, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 1.5)}):Play()
+	tweenService:Create(cardContainer, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 2)}):Play()
 	tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = CFrame.lookAt(workspace.Origin.Position + Vector3.new(-10, 100 + (5 * #workspace.Round.Pillars:GetChildren()), 0), workspace.Origin.Position)}):Play()
 	tweenService:Create(cardActions, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, -0.5)}):Play()
 	
@@ -1013,42 +1061,72 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 	
 	local cardCounts:{[string]:number} = replicatedStorage.Communicators.Remotes.Functions.ClientInfoRequester:InvokeServer("CardCounts")
 	
-	task.wait(0.45)
+	task.wait(0.5)
 	
-	for i, pillar in ipairs(workspace.Round.Pillars:GetChildren()) do
-		if pillar:HasTag("Eliminated") or pillar.Name == tostring(game.Players.LocalPlayer) then continue end
-
-		local billboard = replicatedStorage.Assets.Round.TargetGUI:Clone()
-		local billboardFolder = game.Players.LocalPlayer.PlayerGui:FindFirstChild("Billboards")
+	for i, pillar in ipairs(workspace.Round.Pillars:GetChildren()::{Model}) do
+		if pillar:HasTag("Eliminated") or pillar.Name == tostring(game.Players.LocalPlayer) or (not pillar.PrimaryPart) then continue end
+		
+		local selectableButton = script.Templates.Player:Clone()
 		local player = game.Players:FindFirstChild(pillar.Name)::Player?
+		
+		local position, onScreen = workspace.Camera:WorldToScreenPoint(pillar.PrimaryPart.Position)
 
-		table.insert(billboards, billboard)
+		table.insert(buttons, selectableButton)
+		
+		selectableButton.Position = UDim2.fromOffset(position.X, position.Y)
+		selectableButton.Parent = script.Parent.Container
+		selectableButton.Name = pillar.Name
+		
+		selectableButton.Size = UDim2.fromScale(0.001, 0.001)
+		
+		tweenService:Create(selectableButton, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.1, 0.1)}):Play()
+		
+		selectableButton.Holder.TextLabel.Text = pillar.Name
+		selectableButton.Holder.ImageLabel.TextLabel.Text = if cardCounts then tostring(cardCounts[pillar.Name]) else "?"
+		selectableButton.Icon.Image = if player then "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=420&h=420" else "rbxassetid://" .. tostring(universalInfo["Assets"]["BotIcon"])
 
-		billboard.Parent = billboardFolder or game.Players.LocalPlayer.PlayerGui
-		billboard.Size = UDim2.fromScale(0.001, 0.001)
-		billboard.Adornee = pillar
-		billboard.Name = pillar.Name
-		billboard.Enabled = true
-		
-		tweenService:Create(billboard, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromScale(40, 40)}):Play()
-		
-		if hideEmptyDecks and cardCounts and cardCounts[pillar.Name] == 0 then
-			billboard.Enabled = false
-		end
-		
-		billboard.TextButton.Holder.TextLabel.Text = pillar.Name
-		billboard.TextButton.Holder.ImageLabel.TextLabel.Text = if cardCounts then tostring(cardCounts[pillar.Name]) else "?"
-		billboard.TextButton.Icon.Image = if  player then "rbxthumb://type=AvatarHeadShot&id=" .. player.UserId .. "&w=420&h=420" else "rbxassetid://" .. tostring(universalInfo["Assets"]["BotIcon"])
-		
-		billboard.TextButton.MouseEnter:Connect(function()
-			print("Entered: " .. billboard.Name)
+		local enterConnection:RBXScriptConnection? = selectableButton.MouseEnter:Connect(function()
+			tweenService:Create(selectableButton, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.2, 0.2)}):Play()
 		end)
 		
-		billboard.TextButton.Activated:Connect(function()
+		local leaveConnection:RBXScriptConnection? = selectableButton.MouseLeave:Connect(function()
+			tweenService:Create(selectableButton, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.1, 0.1)}):Play()
+		end)
+
+		selectableButton.Activated:Once(function()
+			table.remove(buttons, table.find(buttons, selectableButton))
+			
+			if enterConnection then
+				enterConnection:Disconnect()
+				enterConnection = nil
+			end
+			
+			if leaveConnection then
+				leaveConnection:Disconnect()
+				leaveConnection = nil
+			end
+
 			target = pillar.Name
+			
+			selectableButton.Rotation = math.random(35, 45) * ((math.random(0, 1) * 2) - 1)
+			selectableButton.UIAspectRatioConstraint.AspectRatio = 2.5
+			
+			tweenService:Create(selectableButton, TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.25, 0.25)}):Play()
+			tweenService:Create(selectableButton, TweenInfo.new(1, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Rotation = 0}):Play()
+			tweenService:Create(selectableButton.UIAspectRatioConstraint, TweenInfo.new(1, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {AspectRatio = 2.1}):Play()
+
+			task.spawn(function()
+				task.wait(0.75)
+				
+				tweenService:Create(selectableButton, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.fromScale(0.001, 0.001), Position = UDim2.new(0, selectableButton.Position.X.Offset, 1.5, selectableButton.Position.Y.Offset)}):Play()
+
+				task.wait(1)
+
+				selectableButton:Destroy()
+			end)
 		end)
 		
-		task.wait(0.05)
+		task.wait(0.025)
 	end
 
 	task.delay(20, function()
@@ -1057,8 +1135,7 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 
 	while task.wait() do
 		if target then
-			tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
-			tweenService:Create(cardActions, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.1)}):Play()
+			print(target)
 			
 			for i, button in ipairs(cardActions:GetChildren()) do
 				if not button:IsA("TextButton") then continue end
@@ -1074,35 +1151,21 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 
 				tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
 			end
-
-			for i, billboard in ipairs(billboards) do
-				if billboard.Name == target then
-					local button = billboard:FindFirstChildOfClass("TextButton")
-					
-					billboard.ClipsDescendants = false
-					
-					if button then
-						button.Rotation = 30
-						tweenService:Create(button, TweenInfo.new(1, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out), {Rotation = 0}):Play()
-					end
-					
-					tweenService:Create(billboard, TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromScale(60, 60)}):Play()
-					
-					task.delay(1.5, function()
-						tweenService:Create(billboard, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.fromScale(0.001, 0.001)}):Play()
-						
-						task.wait(0.25)
-						
-						billboard:Destroy()
-					end)
-				else
-					tweenService:Create(billboard, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromScale(0.001, 0.001)}):Play()
-						
-					task.delay(0.25, function()
-						billboard:Destroy()	
-					end)
-				end
+			
+			for i, button in ipairs(buttons) do
+				button.Interactable = false
+				
+				tweenService:Create(button, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.001, 0.001)}):Play()
+				
+				task.delay(0.5, function()
+					button:Destroy()
+				end)
 			end
+			
+			task.wait(1)
+			
+			tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
+			tweenService:Create(cardActions, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.1)}):Play()
 
 			return target
 		end
@@ -1112,9 +1175,6 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 		end
 	end
 
-	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
-	tweenService:Create(cardActions, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.1)}):Play()
-	
 	for i, button in ipairs(cardActions:GetChildren()) do
 		if not button:IsA("TextButton") then continue end
 
@@ -1129,14 +1189,21 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 
 		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
 	end
+	
+	for i, button in ipairs(buttons) do
+		button.Interactable = false
 
-	for i, billboard in ipairs(billboards) do
-		tweenService:Create(billboard, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromScale(0.001, 0.001)}):Play()
+		tweenService:Create(button, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.001, 0.001)}):Play()
 
-		task.delay(0.25, function()
-			billboard:Destroy()	
+		task.delay(0.5, function()
+			button:Destroy()
 		end)
 	end
+	
+	task.wait(1)
+	
+	tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
+	tweenService:Create(cardActions, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.1)}):Play()
 
 	return " "
 end
@@ -1151,7 +1218,7 @@ function decisionChooseCard() : string
 	local target = nil
 	local antiAFK = false
 
-	tweenService:Create(cardContainer, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 1.5)}):Play()
+	tweenService:Create(cardContainer, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 2)}):Play()
 	tweenService:Create(cardActions, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, -0.5)}):Play()
 	
 	for i, button in ipairs(cardActions:GetChildren()) do
