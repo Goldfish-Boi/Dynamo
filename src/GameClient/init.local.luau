@@ -365,7 +365,7 @@ function addCardFunctionality(card:Frame)
 	local velY:number = 0
 	
 	dragDetector.DragStart:Connect(function(initialPosition)
-		print("Dragging")
+		--print("Dragging")
 		
 		icon.BackgroundTransparency = 1
 		icon.ImageTransparency = 1
@@ -450,7 +450,7 @@ function addCardFunctionality(card:Frame)
 	end)
 
 	dragDetector.DragEnd:Connect(function()
-		print("Stopped")
+		--print("Stopped")
 		
 		if dragConnection then
 			dragConnection:Disconnect()
@@ -850,7 +850,7 @@ function decisionTake(turnCount:number) : string | {string}
 			
 			local decisioncheck = decision::any
 			
-			if typeof(decisioncheck) == "table" and (not table.find(decisioncheck, "Targeted Attack")) then
+			if typeof(decisioncheck) == "string" or (typeof(decisioncheck) == "table" and (not table.find(decisioncheck, "Targeted Attack"))) then
 				task.defer(function()
 					terminateDecision()
 				end)
@@ -1531,7 +1531,7 @@ cardActions.Steal:GetPropertyChangedSignal("Visible"):Connect(function()
 end)
 
 replicatedStorage.Communicators.Remotes.Events.PlayerEliminated.OnClientEvent:Connect(function(pillarToDestroy:Model)
-	local explosionModule = pillarToDestroy:FindFirstChildWhichIsA("ModuleScript", true)
+	local explosionModule = pillarToDestroy:FindFirstChild("ExplosionModule")
 	
 	if explosionModule then
 		require(explosionModule)()
