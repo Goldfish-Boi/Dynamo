@@ -1,5 +1,6 @@
 --!strict
 --!optimize 2
+--!native
 
 local types = require(script.Types)
 
@@ -109,18 +110,26 @@ end
 function tweenModel(model:Model, tweenInfo:TweenInfo, targetCFrame:CFrame)
 	if not model.PrimaryPart then return end
 	
-	local cframeValue = Instance.new("CFrameValue")
-	cframeValue.Value = model:GetPivot()
+	local connection
 	
-	cframeValue.Changed:Connect(function(newCFrame)
-		model:PivotTo(newCFrame)
-	end)
+	local t = 0
+	local originalCFrame = model:GetPivot()
 	
-	local tween = tweenService:Create(cframeValue, tweenInfo, {Value = targetCFrame})
-	tween:Play()
-	
-	tween.Completed:Connect(function()
-		cframeValue:Destroy()
+	connection = runService.Heartbeat:Connect(function(dt)
+		if not model or not model.Parent or t > tweenInfo.Time then
+			model:PivotTo(targetCFrame)
+
+			if connection then
+				connection:Disconnect()
+				connection = nil
+			end
+			
+			return
+		end
+		
+		t += dt
+		
+		model:PivotTo(originalCFrame:Lerp(targetCFrame, tweenService:GetValue(t / tweenInfo.Time, tweenInfo.EasingStyle, tweenInfo.EasingDirection)))
 	end)
 end
 
@@ -171,37 +180,6 @@ function setDeckModel(updateType:string)
 	end
 end
 
---[[function setUsedCardsModel(cards:{string}, updateType:string?, delayNumber:number?)
-	if updateType == "RemoveAll" then
-		cardsFolder.UsedCards:ClearAllChildren()
-		
-		return
-	end
-	
-	if #cards == 0 then return end
-	
-	for i, card in ipairs(cards) do
-		usedCardCount += 1
-		
-		local cardPart = workspace.UsedCards:Clone()
-		cardPart.Name = card
-		cardPart.Position = workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount - 1)), 0)
-		cardPart.Color = cardInfo[card]["Colour"]
-		cardPart.Orientation = Vector3.new(0, math.random(-100, 100) / 10, 90)
-		cardPart.Transparency = 0
-		cardPart.Size = Vector3.new(0.5, 1.4, 1)
-		cardPart.Parent = cardsFolder.UsedCards
-		
-		if cardInfo[card]["IconID"] then
-			cardPart.Decal.ColorMap = "rbxassetid://" .. cardInfo[card]["IconID"]
-		end
-		
-		tweenService:Create(cardPart, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = Vector3.new(0.5, 14, 10)}):Play()
-		
-		if delayNumber then task.wait(delayNumber) end
-	end
-end]]--
-
 function setPillars()
 	print(playerTable)
 	
@@ -219,10 +197,10 @@ function setPillars()
 			if pillarToClone then
 				pillar = pillarToClone:Clone()
 			else
-				pillar = replicatedStorage.Assets.Pillars.Test:Clone()
+				pillar = replicatedStorage.Assets.Pillars["Rectangular Prism"]:Clone()
 			end
 		else
-			pillar = replicatedStorage.Assets.Pillars.Test:Clone()
+			pillar = replicatedStorage.Assets.Pillars["Rectangular Prism"]:Clone()
 		end
 	
 		local circumference = 25 * #playerTable
@@ -239,8 +217,13 @@ function setPillars()
 
 		pillar.Parent = pillarsFolder
 		
-		local explosionModule = serverStorage.ServerAssets.ExplosionModules.Explosion:Clone()
+		local explosionModule = serverStorage.ServerAssets.ExplosionModules.ClientExplosionModules.Explosion:Clone()
+		explosionModule.Name = "ExplosionModule"
 		explosionModule.Parent = pillar
+		
+		local serverExplosionModule = serverStorage.ServerAssets.ExplosionModules.ServerExplosionModules.ExplosionServer:Clone()
+		serverExplosionModule.Name = "ServerExplosionModule"
+		serverExplosionModule.Parent = pillar
 		
 		if not isaPlayer then
 			local bot = replicatedStorage.Assets.Round.Bot:Clone()
@@ -501,21 +484,21 @@ function eliminatePlayer(index:number, leaving:boolean?)
 	
 	replicatedStorage.Communicators.Remotes.Events.PlayerEliminated:FireAllClients(pillarsTable[index])
 	
+	if pillarsTable[index] then
+		local explosionModule = pillarsTable[index]:FindFirstChild("ServerExplosionModule")
+		
+		if explosionModule then
+			task.spawn(function()
+				require(explosionModule)()
+			end)
+		end
+	end
+	
 	if not isaPlayer then
 		local bot = botsFolder:FindFirstChild(playerName)
 		
 		if bot then 
 			bot:Destroy() 
-		end
-	else
-		if player then
-			task.delay(3, function()
-				pcall(function()
-					replicatedStorage.Communicators.Remotes.Events.TransitionWithRound:FireClient(player)
-
-					player:LoadCharacterAsync()
-				end)
-			end)
 		end
 	end
 	
