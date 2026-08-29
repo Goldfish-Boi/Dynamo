@@ -988,7 +988,7 @@ function initiateAction(index:number, actionInfo:types.ActionInfo)
 	if actionInfo.Type == "Steal" then
 		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
 			{Type = "TransitionCard", Card = actionInfo.Cards, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125},
-			{Type = "SetUsedCards", Cards = actionInfo.Cards, UpdateType = nil, DelayNumber = 0.125, InitialDelayNumber = 1.5},
+			{Type = "SetUsedCards", Cards = actionInfo.Cards, DelayNumber = 0.125, InitialDelayNumber = 1.5},
 		})
 		
 		for i, card in actionInfo.Cards do
@@ -999,7 +999,7 @@ function initiateAction(index:number, actionInfo:types.ActionInfo)
 	elseif actionInfo.Type == "Triple Steal" then
 		replicatedStorage.Communicators.Remotes.Events.CreateClientEffect:FireAllClients({
 			{Type = "TransitionCard", Card = actionInfo.Cards, TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), From = primary.Position + Vector3.new(0, 30, 0), To = "UsedCards", Parabolic = true, Delay = 0.125},
-			{Type = "SetUsedCards", Cards = actionInfo.Cards, UpdateType = nil, DelayNumber = 0.125, InitialDelayNumber = 1.5},
+			{Type = "SetUsedCards", Cards = actionInfo.Cards, DelayNumber = 0.125, InitialDelayNumber = 1.5},
 		})
 		
 		for i, card in actionInfo.Cards do
