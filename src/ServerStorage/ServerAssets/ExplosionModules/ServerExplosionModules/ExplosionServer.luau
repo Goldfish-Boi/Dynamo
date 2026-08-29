@@ -2,7 +2,7 @@
 --!optimize 2
 
 return function ()
-	print("Boom")
+	--print("Boom")
 	
 	local pillar:Model = script.Parent::any
 	local playerSpawn:BasePart = pillar:FindFirstChild("PlayerSpawn")::BasePart
@@ -24,7 +24,7 @@ return function ()
 	
 	local parts = workspace:GetPartBoundsInRadius(playerSpawn.Position, math.random(75, 200) / 10, params)
 	
-	print(parts)
+	--print(parts)
 	
 	for i, part in ipairs(parts) do
 		part.Anchored = false
