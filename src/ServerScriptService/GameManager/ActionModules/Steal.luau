@@ -7,7 +7,7 @@ local helpers = require(script.Parent.Parent.Helpers)
 local stealModule = {}
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
-
+0
 function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 	if (not helpers.getPlrCardsProvider) or (not helpers.getPlayerTable) or (not helpers.getPillarsTable) then warn("No Helpers registered") return end
 	
@@ -46,6 +46,7 @@ function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 		
 		if targetIsaPlayer and targetPlayer then
 			replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(targetPlayer, "RemoveCard", nil, stealIndex)
+			replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(targetPlayer, "Notification", players[index] .. " has stolen a card from you!")
 		else
 			Random.new():Shuffle(plrCards[targetIndex])
 		end
@@ -74,6 +75,7 @@ function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 		
 		if targetIsaPlayer and targetPlayer then
 			replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(targetPlayer, "RemoveCard", nil, stealIndex)
+			replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(targetPlayer, "Notification", players[index] .. " has stolen a card from you!")
 		end
 		
 		local from = pillarsTable[targetIndex]::Model
@@ -90,7 +92,7 @@ function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 end
 
 function stealModule.TripleSteal(index:number, actionInfo:types.ActionInfo)
-	if (not helpers.getPlrCardsProvider) or (not helpers.getPillarsTable) then warn("No Helpers registered") return end
+	if (not helpers.getPlrCardsProvider) or (not helpers.getPillarsTable) or (not helpers.getPlayerTable) then warn("No Helpers registered") return end
 	
 	print("Triple Steal")
 	
@@ -103,6 +105,8 @@ function stealModule.TripleSteal(index:number, actionInfo:types.ActionInfo)
 	local targetIsaPlayer, targetPlayer = helpers.isPlayer(targetIndex)
 	local plrCards = helpers.getPlrCardsProvider()
 	local pillarsTable = helpers.getPillarsTable()
+	
+	local players = helpers.getPlayerTable()
 
 	if isaPlayer and player then
 		local success, cardToFind:string = pcall(function()
@@ -128,6 +132,7 @@ function stealModule.TripleSteal(index:number, actionInfo:types.ActionInfo)
 			
 			if targetIsaPlayer and targetPlayer then
 				replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(targetPlayer, "RemoveCard", nil, indexOfStolenCard)
+				replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(targetPlayer, "Notification", players[index] .. " has stolen your " .. cardToFind)
 			end
 			
 			local from = pillarsTable[targetIndex]::Model
@@ -142,6 +147,8 @@ function stealModule.TripleSteal(index:number, actionInfo:types.ActionInfo)
 			end)
 
 			table.remove(plrCards[targetIndex], indexOfStolenCard)
+		else
+			replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireClient(player, "Notification", players[targetIndex] .. " didn't have a " .. cardToFind)
 		end
 	else
 		local stealIndex = math.random(1, #plrCards[targetIndex])
