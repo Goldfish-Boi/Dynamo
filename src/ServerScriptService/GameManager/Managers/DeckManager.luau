@@ -5,8 +5,10 @@ local types = require(script.Parent.Parent.Types)
 
 local deckManager = {
 	TurnsToDo = 1,
-	IsRoundTerminated = false,
 	OverrideTurnIndex = -1,
+	InitialDeckSize = -1,
+	
+	IsRoundTerminated = false,
 	ReverseOrder = false
 }
 --::types.deckManager
@@ -19,7 +21,7 @@ const cards = table.freeze({
 	{Name = "Cake", ChancePerPlr = 100},
 	{Name = "Taco", ChancePerPlr = 100},
 	{Name = "Choco Milk", ChancePerPlr = 100},
-	{Name = "Reverse", ChancePerPlr = 75},
+	{Name = "Reverse", ChancePerPlr = 750},
 	--{Name = "Request", ChancePerPlr = 125},
 	--{Name = "Deny", ChancePerPlr = 120},
 	--{Name = "Analyse", ChancePerPlr = 80},
@@ -57,22 +59,6 @@ function deckManager.CreatePlayerDecks(numberOfPlayers:number)
 	
 	initialDeck = {}
 	
-	--[[for i in cards do
-		for j = 1, cards[i].Amount do
-			cardCount += 1
-
-			initialDeck[cardCount] = cards[i].Name
-		end
-	end]]--
-	
-	--[[for i, card in pairs(cards) do
-		for j = 1, card.Amount * numberOfPlayers do
-			cardCount += 1
-			
-			initialDeck[cardCount] = card.Name
-		end
-	end]]--
-	
 	for i, card in ipairs(cards) do
 		local loops = (card.ChancePerPlr * numberOfPlayers) // 100
 
@@ -104,22 +90,6 @@ function deckManager.CreatePlayerDecks(numberOfPlayers:number)
 			end
 		end
 	end
-	
-	--[[for i, card in pairs(variableCards) do
-		for j = 1, card.Amount * numberOfPlayers do
-			cardCount += 1
-			
-			for i, variation in ipairs(card.CanBecome) do
-				if math.random(1, 100) <= card.Chance[i] then
-					initialDeck[cardCount] = variation
-					break
-				else
-					initialDeck[cardCount] = card.Name
-					break
-				end
-			end
-		end
-	end]]--
 	
 	for i, card in ipairs(variableCards) do
 		local loops = (card.ChancePerPlr * numberOfPlayers) // 100
@@ -284,13 +254,7 @@ function deckManager.CreateDeck(numberOfPlayers:number)
 		end
 	end
 	
-	--[[for i in nonStartingCards do
-		for j = 1, cards[i].Amount do
-			cardCount += 1
-			
-			deck[cardCount] = cards[i].Name
-		end
-	end]]--
+	deckManager.InitialDeckSize = #initialDeck
 	
 	return initialDeck
 end
@@ -329,6 +293,10 @@ end
 
 function deckManager.SetTurnCount(turns:number)
 	deckManager["TurnsToDo"] = turns
+end
+
+function deckManager.GetInitialDeckSize()
+	return deckManager["TurnsToDo"]
 end
 
 function deckManager.Shuffle(Deck:{any})
