@@ -295,10 +295,6 @@ function deckManager.SetTurnCount(turns:number)
 	deckManager["TurnsToDo"] = turns
 end
 
-function deckManager.GetInitialDeckSize()
-	return deckManager["TurnsToDo"]
-end
-
 function deckManager.Shuffle(Deck:{any})
 	random:Shuffle(Deck)
 	
