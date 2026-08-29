@@ -134,9 +134,9 @@ function tweenModel(model:Model, tweenInfo:TweenInfo, targetCFrame:CFrame)
 end
 
 function setDeckModel(updateType:string)
-	if not deck or #deck == 0 then return end
-	
 	if updateType == "Set" then
+		if not deck or #deck == 0 then return end
+		
 		for i, card in pairs(deck) do
 			local cardPart = workspace.Deck:Clone()
 
@@ -150,6 +150,8 @@ function setDeckModel(updateType:string)
 		
 		mainScreen.SurfaceGui.TextLabel2.Text = tostring(#deck)
 	elseif updateType == "RemoveFirst" then
+		if not deck or #deck == 0 then return end
+		
 		local n = 0
 		
 		for i, card in ipairs(cardsFolder.Deck:GetChildren()) do
@@ -635,10 +637,10 @@ function getDecision(index:number) : string?|{string}?
 	if not isaPlayer then
 		task.wait(math.random(5, 15) / 10)
 		
-		local decision = botLogic.Play(botsFolder:FindFirstChild(playerName), plrCards[index], #playerTable)
+		local decision = botLogic.Play(botsFolder:FindFirstChild(playerName), deck, plrCards[index], #playerTable)
 
 		if decision == "Play" then
-			local cardPlayed = botLogic.playCard(botsFolder:FindFirstChild(playerName)::Instance, plrCards[index], #playerTable)
+			local cardPlayed = botLogic.playCard(botsFolder:FindFirstChild(playerName)::Instance, deck, plrCards[index], #playerTable)
 			return cardPlayed == "Take" and "Take" or {cardPlayed}
 		end
 
@@ -683,65 +685,10 @@ function checkDecision(index:number, decision:string|{string}) : boolean
 			require(script.CardModules:FindFirstChild(decision[1])::Instance).Main(index, decision)
 		end
 		
-		--[[local primary = pillarsTable[index].PrimaryPart
-
-		if primary then
-			transitionCard(decision[1], primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
-		end
-
-		task.spawn(function()
-			task.wait(1.5)
-			setUsedCardsModel(decision)
-		end)
-
-		table.remove(plrCards[index], table.find(plrCards[index], decision[i]))]]--
-		
-		--[[if #decision == 1 then
-			print(tostring(playerName) .. " has chosen: " .. decision[1])
-			
-			local module = script.CardModules:FindFirstChild(decision[1])::Instance
-			if module then
-				require(script.CardModules:FindFirstChild(decision[1])::Instance).Main(index, decision)
-			end
-			
-			local primary = pillarsTable[index].PrimaryPart
-			
-			if primary then
-				transitionCard(decision[1], primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
-			end
-			
-			task.spawn(function()
-				task.wait(1.5)
-				setUsedCardsModel(decision)
-			end)
-			
-			table.remove(plrCards[index], table.find(plrCards[index], decision[1]))
-		else
-			for i, card in ipairs(decision) do
-				local module = script.CardModules:FindFirstChild(decision[i])::Instance
-				if module then
-					require(script.CardModules:FindFirstChild(decision[i])::Instance).Main(index, decision)
-				end
-
-				local primary = pillarsTable[index].PrimaryPart
-
-				if primary then
-					transitionCard(decision[1], primary.Position + Vector3.new(0, 30, 0), workspace.UsedCards.Position + Vector3.new(0, 0.25 + (0.5 * (usedCardCount)), 0), true)
-				end
-
-				task.spawn(function()
-					task.wait(1.5)
-					setUsedCardsModel(decision)
-				end)
-				
-				table.remove(plrCards[index], table.find(plrCards[index], decision[i]))
-			end
-		end]]--
-		
 		return false
 	end
 
-	print(tostring(playerName) .. " has chosen: " .. decision)
+	--print(tostring(playerName) .. " has chosen: " .. decision)
 	
 	if decision == "AFK" and isaPlayer and player then
 		local penalty = (player:GetAttribute("AFKPenalty") or 0) + 1
@@ -850,7 +797,7 @@ function runRoundLoop()
 
 	while task.wait(0.25) do
 		if #playerTable == 1 or #playerTable == 0 or #deck == 0 then
-			print("Ending bomb duty", playerTable, #playerTable, deck, #deck)
+			--print("Ending bomb duty", playerTable, #playerTable, deck, #deck)
 			
 			break
 		end
@@ -867,7 +814,7 @@ function runRoundLoop()
 			currentTurnIndex = #playerTable
 		end
 		
-		print(currentTurnIndex)
+		--print(currentTurnIndex)
 
 		eliminated = turn(if deckManager["OverrideTurnIndex"] > 0 then deckManager["OverrideTurnIndex"] else currentTurnIndex)
 	end
