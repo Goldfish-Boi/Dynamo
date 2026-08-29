@@ -14,6 +14,7 @@ local universalInfo:{[string]:any} = require(replicatedStorage.Modules.Universal
 local gui = script.Parent
 local cardContainer = gui.CardContainer
 local pickCard = gui.PickCard
+local notifcationContainer = gui.GameNotifications
 local listLayout = cardContainer.UIListLayout
 local containerAbsSize = cardContainer.AbsoluteSize.X
 local containerAbsPos = cardContainer.AbsolutePosition.X
@@ -25,6 +26,7 @@ local sounds = script.Sounds
 local debounce:boolean = false
 local haltCountDown = false
 local hoveredCard:Frame? = nil
+local notificationCount = 0
 local antiInactivityCountdown:number = 20
 local actionInactivityCountdown:number = 20
 
@@ -1338,8 +1340,6 @@ function decisionChooseCard() : string
 						task.delay(0.25, function()
 							card:Destroy()
 						end)
-						
-						task.wait(0.05)
 					end
 					
 					task.delay(0.25, function()
@@ -1391,8 +1391,6 @@ function decisionChooseCard() : string
 				task.delay(0.25, function()
 					card:Destroy()
 				end)
-
-				task.wait(0.05)
 			end
 
 			task.delay(0.25, function()
@@ -1419,6 +1417,38 @@ end
 
 function decisionChooseCardFromDeck() : string
 	return "Test"
+end
+
+function createNotification(text:string)
+	notificationCount += 1
+	
+	local notification = notifcationContainer.Notificationtemplate:Clone()
+	
+	notification.Name = "Notification"
+	notification.Size = UDim2.fromScale(1, 0.001)
+	notification.LayoutOrder = -notificationCount
+	notification.Visible = true
+	notification.TextLabel.MaxVisibleGraphemes = 0
+	notification.Parent = notifcationContainer.Notificationtemplate.Parent
+	
+	tweenService:Create(notification, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(1, 0.15)}):Play()
+	tweenService:Create(notification.TextLabel, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {MaxVisibleGraphemes = text:len()}):Play()
+	
+	task.delay(text:len() * 0.1, function()
+		tweenService:Create(notification, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(1, 0.001)}):Play()
+		
+		task.wait(0.1)
+		
+		notification:Destroy()
+	end)
+	
+	for count = 1, text:len() do
+		notification.TextLabel.Text = text:sub(1, count)
+		
+		if count % 2 == 0 then
+			task.wait(0.05)
+		end
+	end
 end
 
 replicatedStorage.Communicators.Remotes.Events.TransitionWithRound.OnClientEvent:Connect(function()
@@ -1736,6 +1766,8 @@ replicatedStorage.Communicators.Remotes.Events.OrderClientAction.OnClientEvent:C
 		end
 		
 		deselectAllCards()
+	elseif Action == "Notification" and typeof(Target) == "string" then
+		createNotification(Target)
 	end
 end)
 
