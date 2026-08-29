@@ -13,6 +13,7 @@ local universalInfo:{[string]:any} = require(replicatedStorage.Modules.Universal
 
 local gui = script.Parent
 local cardContainer = gui.CardContainer
+local pickCard = gui.PickCard
 local listLayout = cardContainer.UIListLayout
 local containerAbsSize = cardContainer.AbsoluteSize.X
 local containerAbsPos = cardContainer.AbsolutePosition.X
@@ -35,7 +36,7 @@ local dragTarget:UDim2?
 local decision:(string|{string}|number)?
 local action:(number | string)?
 
-local originalCameraCFrame:CFrame? = nil
+local originalCameraCFrame:{CFrame?} = {}
 local dragConnection:RBXScriptConnection?
 local countdownThread:thread
 local actionCountdownThread:thread
@@ -643,7 +644,7 @@ function removeCard(index)
 		tweenService:Create(aspectRatio, TweenInfo.new(0.125, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {AspectRatio = 0.001}):Play()
 	end)
 	
-	print("Removed", cards, cardsSelected, #cardsSelected)
+	--print("Removed", cards, cardsSelected, #cardsSelected)
 	
 	debris:AddItem(cardToRemove, 0.375)
 	
@@ -727,7 +728,7 @@ function deselectAllCards(silent:boolean?, hideSound:boolean?)
 	updateCardActions(nil)
 end
 
-function terminateDecision()
+function terminateDecision(avoidReset:boolean?)
 	if decision then
 		if typeof(decision) == "string" then
 			if cardInfo[decision] and cardInfo[decision]["SkipsTurn"] == false then
@@ -743,15 +744,20 @@ function terminateDecision()
 	decision = nil
 	enableTaking(false)
 	
-	if workspace.Camera.CameraType == Enum.CameraType.Scriptable then
+	print("Terminating Decision")
+	
+	if workspace.Camera.CameraType == Enum.CameraType.Scriptable and #originalCameraCFrame > 0 and (not avoidReset) then
 		task.delay(0.5, function()
-			workspace.Camera.CameraType = Enum.CameraType.Custom
-			originalCameraCFrame = nil
+			table.remove(originalCameraCFrame, #originalCameraCFrame)
+			
+			if #originalCameraCFrame == 0 then
+				workspace.Camera.CameraType = Enum.CameraType.Custom
+			end
 		end)
 		
-		print("Terminate")
+		print("Terminate Camera")
 		
-		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
+		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame[#originalCameraCFrame]}):Play()
 	end
 
 	if #cardsSelected == 1 and not cardInfo[cardsSelected[1].Name]["CanStack"] then
@@ -814,6 +820,8 @@ function decisionTake(turnCount:number) : string | {string}
 	antiInactivityCountdown = 20
 	decision = "Awaiting"
 	
+	print(turnCount)
+	
 	enableTaking(true)
 
 	local topMostCard  = workspace.Round.Cards.Deck:FindFirstChild(tostring(#workspace.Round.Cards.Deck:GetChildren()))::BasePart
@@ -821,9 +829,11 @@ function decisionTake(turnCount:number) : string | {string}
 	if topMostCard then
 		workspace.Camera.CameraType = Enum.CameraType.Scriptable
 		
-		if not originalCameraCFrame then
-			originalCameraCFrame = workspace.Camera.CFrame
+		if #originalCameraCFrame == 0 then
+			table.insert(originalCameraCFrame, workspace.Camera.CFrame)
 		end
+		
+		print("Going to top most card")
 
 		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = CFrame.new(topMostCard.Position) * CFrame.new(0, 15, -15) * CFrame.Angles(0, math.rad(180), 0) * CFrame.Angles(math.rad(-60), 0, 0)}):Play()
 	end
@@ -851,8 +861,24 @@ function decisionTake(turnCount:number) : string | {string}
 			local decisioncheck = decision::any
 			
 			if typeof(decisioncheck) == "string" or (typeof(decisioncheck) == "table" and (not table.find(decisioncheck, "Targeted Attack"))) then
+				local turnsSkipped = 0
+				
+				if typeof(decisioncheck) == "table" then
+					for i, card in ipairs(decisioncheck::{string}) do
+						if cardInfo[card] and cardInfo[card]["SkipsTurn"] then
+							turnsSkipped += 1
+						end
+					end
+				end
+				
+				if turnsSkipped > 0 then
+					for i = 1, turnsSkipped - 1 do
+						turnCount -= 1
+					end
+				end
+				
 				task.defer(function()
-					terminateDecision()
+					terminateDecision(turnCount > 1)
 				end)
 			end
 
@@ -862,7 +888,7 @@ function decisionTake(turnCount:number) : string | {string}
 		if antiInactivityCountdown == 0 then
 			task.defer(function()
 				print("AFK")
-				terminateDecision()
+				terminateDecision(turnCount > 1)
 			end)
 
 			return "AFK"
@@ -871,7 +897,7 @@ function decisionTake(turnCount:number) : string | {string}
 
 	task.defer(function()
 		print("TypeCheck")
-		terminateDecision()
+		terminateDecision(turnCount > 1)
 	end)
 
 	return "AFK"
@@ -1041,13 +1067,18 @@ end
 
 function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : string
 	if not game.Players.LocalPlayer then return "Bot 1" end
-
+	
+	antiInactivityCountdown = 20
+	haltCountDown = true
+	
 	local target = nil
 	local antiAFK = false
 
 	local buttons:{TextButton} = {}
 
 	workspace.Camera.CameraType = Enum.CameraType.Scriptable
+	
+	print("Picking Player")
 
 	tweenService:Create(cardContainer, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 2)}):Play()
 	tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = CFrame.lookAt(workspace.Origin.Position + Vector3.new(-10, 100 + (5 * #workspace.Round.Pillars:GetChildren()), 0), workspace.Origin.Position)}):Play()
@@ -1143,13 +1174,16 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 				button.Interactable = true
 			end
 
-			if resetCamera and originalCameraCFrame then
+			if resetCamera and #originalCameraCFrame > 0 then
 				task.delay(0.5, function()
-					workspace.Camera.CameraType = Enum.CameraType.Custom
-					originalCameraCFrame = nil
+					table.remove(originalCameraCFrame, #originalCameraCFrame)
+
+					if #originalCameraCFrame == 0 then
+						workspace.Camera.CameraType = Enum.CameraType.Custom
+					end
 				end)
 
-				tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
+				tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame[#originalCameraCFrame]}):Play()
 			end
 			
 			for i, button in ipairs(buttons) do
@@ -1181,13 +1215,16 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 		button.Interactable = true
 	end
 
-	if resetCamera and originalCameraCFrame then
+	if resetCamera and #originalCameraCFrame > 0 then
 		task.delay(0.5, function()
-			workspace.Camera.CameraType = Enum.CameraType.Custom
-			originalCameraCFrame = nil
+			table.remove(originalCameraCFrame, #originalCameraCFrame)
+
+			if #originalCameraCFrame == 0 then
+				workspace.Camera.CameraType = Enum.CameraType.Custom
+			end
 		end)
 
-		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame}):Play()
+		tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame[#originalCameraCFrame]}):Play()
 	end
 	
 	for i, button in ipairs(buttons) do
@@ -1214,8 +1251,11 @@ end
 
 function decisionChooseCard() : string
 	if not game.Players.LocalPlayer then return "Defuse" end
-
-	local target = nil
+	
+	antiInactivityCountdown = 20
+	haltCountDown = true
+	
+	local target:string? = nil
 	local antiAFK = false
 
 	tweenService:Create(cardContainer, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 2)}):Play()
@@ -1226,6 +1266,49 @@ function decisionChooseCard() : string
 		
 		button.Interactable = false
 	end
+	
+	local effectBackground = script.Templates.EffectGui:Clone()
+	effectBackground.Frame.BackgroundTransparency = 1
+	effectBackground.DisplayOrder = -1
+	effectBackground.Parent = gui.Parent
+	effectBackground.Enabled = true
+	
+	pickCard.Visible = true
+	
+	tweenService:Create(effectBackground.Frame, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.25}):Play()
+	
+	for cardName, cardValue in pairs(cardInfo) do
+		if cardName == "CardBack" then continue end
+		if cardValue["CanTripleSteal"] == false then continue end
+		
+		local card = pickCard.CardTemplate:Clone()
+		
+		card.Icon.Size = UDim2.fromScale(0.001, 1)
+		card.Icon.InputSink = Enum.InputSink.All
+		card.Icon.Image = "rbxassetid://" .. tostring(cardValue["IconID"])
+		card.Name = cardName
+		card.LayoutOrder = if cardValue["BotUsuability"] and typeof(cardValue["BotUsuability"]) == "number" then cardValue["BotUsuability"] else 0
+		card.Visible = true
+		card.Parent = pickCard.CardTemplate.Parent
+		
+		tweenService:Create(card.Icon, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.8, 0.8)}):Play()
+		
+		card.MouseEnter:Connect(function()
+			tweenService:Create(card.Icon, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(1, 1)}):Play()
+		end)
+		
+		card.MouseLeave:Connect(function()
+			tweenService:Create(card.Icon, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.8, 0.8)}):Play()
+		end)
+		
+		card.Icon.Activated:Once(function()
+			if target then return end
+			
+			target = cardName
+		end)
+		
+		task.wait(0.05)
+	end
 
 	task.delay(20, function()
 		antiAFK = true
@@ -1234,6 +1317,40 @@ function decisionChooseCard() : string
 	while task.wait() do
 		if target then
 			task.defer(function()
+				tweenService:Create(effectBackground.Frame, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 1}):Play()
+				
+				local topMostCard = workspace.Round.Cards.Deck:FindFirstChild(tostring(#workspace.Round.Cards.Deck:GetChildren()))::BasePart
+				if topMostCard then
+					tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = CFrame.new(topMostCard.Position) * CFrame.new(0, 15, -15) * CFrame.Angles(0, math.rad(180), 0) * CFrame.Angles(math.rad(-60), 0, 0)}):Play()
+				end
+				
+				task.spawn(function()
+					for i, card in ipairs(pickCard:GetChildren()) do
+						if not card:IsA("Frame") then continue end
+						if card.Name == "CardTemplate" then continue end
+
+						local icon = card:FindFirstChild("Icon")::ImageButton
+
+						if not icon then continue end
+						
+						tweenService:Create(icon, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromScale(0.001, 0.8)}):Play()
+						
+						task.delay(0.25, function()
+							card:Destroy()
+						end)
+						
+						task.wait(0.05)
+					end
+					
+					task.delay(0.25, function()
+						pickCard.Visible = false
+					end)
+				end)
+				
+				task.delay(0.25, function()
+					effectBackground:Destroy()
+				end)
+				
 				tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
 				tweenService:Create(cardActions, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.1)}):Play()
 				
@@ -1253,6 +1370,40 @@ function decisionChooseCard() : string
 	end
 
 	task.defer(function()
+		tweenService:Create(effectBackground.Frame, TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 1}):Play()
+		
+		local topMostCard = workspace.Round.Cards.Deck:FindFirstChild(tostring(#workspace.Round.Cards.Deck:GetChildren()))::BasePart
+		if topMostCard then
+			tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = CFrame.new(topMostCard.Position) * CFrame.new(0, 15, -15) * CFrame.Angles(0, math.rad(180), 0) * CFrame.Angles(math.rad(-60), 0, 0)}):Play()
+		end
+		
+		task.spawn(function()
+			for i, card in ipairs(pickCard:GetChildren()) do
+				if not card:IsA("Frame") then continue end
+				if card.Name == "CardTemplate" then continue end
+
+				local icon = card:FindFirstChild("Icon")::ImageButton
+
+				if not icon then continue end
+
+				tweenService:Create(icon, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.fromScale(0.001, 0.8)}):Play()
+
+				task.delay(0.25, function()
+					card:Destroy()
+				end)
+
+				task.wait(0.05)
+			end
+
+			task.delay(0.25, function()
+				pickCard.Visible = false
+			end)
+		end)
+
+		task.delay(0.25, function()
+			effectBackground:Destroy()
+		end)
+		
 		tweenService:Create(cardContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.75)}):Play()
 		tweenService:Create(cardActions, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.fromScale(0.5, 0.1)}):Play()
 		
