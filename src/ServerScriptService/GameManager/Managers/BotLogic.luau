@@ -21,13 +21,23 @@ function getSpecificCardCount(card:string, hand:{string}) : number
 	return cardCount
 end
 
-function computeRisk(hand:{string}, plrCount:number) : number
-	if (not deckManager.InitialDeck) or (not deckManager.CurrentDeck) then return math.random(1, 100) end
+function exponantiateRange(min:number, n:number, max:number, exponent:number) : number
+	local expMin = min ^ exponent
+	local expMax = max ^ exponent
 	
-	local startingDeckSize = #deckManager.InitialDeck
-	local deckSize = #deckManager.CurrentDeck
+	local newN = math.map(n ^ exponent, expMin, expMax, 1, 100)
+	
+	--print("Mapped: " .. tostring(min) .. ":" .. tostring(n) .. ":" .. tostring(max) .. " -> 1:" .. tostring(newN) .. ":100")
+	
+	return newN
+end
 
-	if deckManager.CurrentDeck[1] == "Exposed Nuke" then
+function computeRisk(deck:{string}, hand:{string}, plrCount:number) : number
+	if (not deckManager.InitialDeckSize) then return math.random(1, 100) end
+	
+	local startingDeckSize = deckManager.InitialDeckSize
+
+	if deck[1] == "Exposed Nuke" then
 		return 100
 	end
 	
@@ -38,7 +48,7 @@ function computeRisk(hand:{string}, plrCount:number) : number
 	if startingDeckSize == plrCount then
 		return 100
 	else
-		return math.clamp(((startingDeckSize - deckSize) / (startingDeckSize - plrCount)) * 99 + 1, 1, 100)
+		return math.clamp(((startingDeckSize - #deck) / (startingDeckSize - plrCount)) * 99 + 1, 1, 100)
 	end
 end
 
@@ -54,8 +64,15 @@ function findHighestPriorityCard(state:string, hand:{string}, risk:number) : str
 		if state == "Defense" and table.find(hand, "Ultra Skip") then
 			return "Ultra Skip"
 		end
-		if state == "Offense" and table.find(hand, "Attack") then
-			return "Attack"
+		
+		if state == "Offense" and (table.find(hand, "Attack") or table.find(hand, "Targeted Attack")) then
+			if table.find(hand, "Attack") and table.find(hand, "Targeted Attack") then
+				return "Attack"
+			elseif (not table.find(hand, "Attack")) and table.find(hand, "Targeted Attack") then
+				return "Targeted Attack"
+			else
+				return "Attack"
+			end
 		end
 	end
 
@@ -93,7 +110,7 @@ function findHighestPriorityCard(state:string, hand:{string}, risk:number) : str
 	return "Take"
 end
 
-function botLogic.playCard(bot:Instance, deck:{string}, plrCount:number) : string
+function botLogic.playCard(bot:Instance, deck:{string}, hand:{string}, plrCount:number) : string
 	local state
 	
 	if math.random(1, 10) < bot:GetAttribute("Aggression")::number then
@@ -102,10 +119,10 @@ function botLogic.playCard(bot:Instance, deck:{string}, plrCount:number) : strin
 		state = "Defense"
 	end
 	
-	return findHighestPriorityCard(state, deck, computeRisk(deck, plrCount))
+	return findHighestPriorityCard(state, hand, computeRisk(deck, hand, plrCount))
 end
 
-function botLogic.Play(bot:Instance, hand:{string}, plrCount:number) : string
+function botLogic.Play(bot:Instance, deck:{string}, hand:{string}, plrCount:number) : string
 	if not helpers.getPlrCardsProvider then return "Take" end
 	
 	local canSteal:boolean = false
@@ -139,12 +156,19 @@ function botLogic.Play(bot:Instance, hand:{string}, plrCount:number) : string
 	local plrCards = helpers.getPlrCardsProvider()
 	local otherPlayers:{string} = helpers.getAllOthers(helpers.getPlayerIndex(bot.Name))
 	
-	if math.random(1, 100) >= computeRisk(hand, plrCount) and #hand ~= 0 then
-		--[[if #steals ~= 0 and plrCards then
+	local risk = computeRisk(deck, hand, plrCount)
+	local expRisk = exponantiateRange(1, risk, 100, 3)
+	
+	--print(risk .. " -> " .. expRisk)
+	
+	if math.random(1, 100) <= exponantiateRange(1, risk, 100, 1.25) and #hand ~= 0 then
+		if #steals ~= 0 and plrCards and math.random(1, 100) < expRisk then
 			local cardToUse = steals[math.random(1, #steals)]
 			
+			print("Stealing", cardToUse)
+			
 			stealModule.Steal(helpers.getPlayerIndex(bot.Name), {Type = "Steal", TargetIndex = helpers.getPlayerIndex(otherPlayers[math.random(1, #otherPlayers)]), Cards = {cardToUse, cardToUse}})
-		end]]--
+		end
 		
 		return "Play"
 	else
