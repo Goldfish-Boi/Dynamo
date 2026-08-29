@@ -13,6 +13,7 @@ const cardInfo = table.freeze({
 		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
+		CanTripleSteal = false,
 		
 		UsuabilityType = "None",
 		BotUsuability = 0,
@@ -27,6 +28,7 @@ const cardInfo = table.freeze({
 		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
+		CanTripleSteal = false,
 		
 		UsuabilityType = "None",
 		BotUsuability = -9999,
@@ -109,7 +111,7 @@ const cardInfo = table.freeze({
 		UsuabilityType = "Offense",
 		BotUsuability = 25,
 	},
-	["Deny"] = {
+	--[[["Deny"] = {
 		Colour = Color3.fromRGB(255, 125, 120),
 		IconID = 109600127359870,
 		DeckDescription = "Cancel another player's action. Works on most cards, including itself",
@@ -121,7 +123,7 @@ const cardInfo = table.freeze({
 		
 		UsuabilityType = "Defense",
 		BotUsuability = 15
-	},
+	},]]--
 	["Cheezburger"] = {
 		Colour = Color3.fromRGB(190, 190, 190),
 		IconID = 70877843847181,
@@ -304,7 +306,7 @@ const cardInfo = table.freeze({
 		UsuabilityType = "Offense",
 		BotUsuability = 10
 	},
-	["Draw from the bottom"] = {
+	--[[["Draw from the bottom"] = {
 		Colour = Color3.fromRGB(147, 166, 107),
 		IconID = nil,
 		DeckDescription = "Take the bottom-most card from the deck on your next turn",		
@@ -328,7 +330,7 @@ const cardInfo = table.freeze({
 
 		UsuabilityType = "Offense",
 		BotUsuability = 10
-	},
+	},]]--
 	["Nuke"] = {
 		Colour = Color3.fromRGB(76, 206, 255),
 		IconID = 118923559882263,
@@ -340,11 +342,12 @@ const cardInfo = table.freeze({
 		SkipsTurn = false,
 		Usable = false,
 		CanStack = false,
+		CanTripleSteal = false,
 
 		UsuabilityType = "Offense",
 		BotUsuability = -math.huge
 	},
-	["Supercharge"] = {
+	--[[["Supercharge"] = {
 		Colour = Color3.fromRGB(211, 118, 12),
 		IconID = nil,
 		Description = "Force yourself to take 3 turns",
@@ -391,7 +394,7 @@ const cardInfo = table.freeze({
 		
 		UsuabilityType = "Offense",
 		BotUsuability = 15
-	},
+	},]]--
 })
 
 return cardInfo
