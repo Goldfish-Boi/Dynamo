@@ -11,13 +11,14 @@ local runService = game:GetService("RunService")
 local players = game:GetService("Players")
 local teams = game:GetService("Teams")
 
-local require = require
+--local require = require
 local data = require(script.Parent.DataInit.Data)
-local universalInfo = require(replicatedStorage.Modules.UniversalInfo)
+local universalInfo = require(replicatedStorage.Modules.UniversalInfo)::{[string]:any}
 local cardInfo = require(replicatedStorage.Modules.CardInfo)
 local deckManager = require(script.Managers.DeckManager)
 local botLogic = require(script.Managers.BotLogic)
 local helpers = require(script.Helpers)
+local statsHandler = require(script.StatsHandler)
 
 local pi = math.pi
 
@@ -43,6 +44,7 @@ local tweenTable:{Tween} = {}
 local pillarsTable:{Model} = {}
 local playerTable:{string} = {}
 local plrCards:{[number]:{string}} = {}
+local playerDataToUpdate:{[string]:{[string]:any}} = {}
 
 local plrData = data.returnAllData()
 
@@ -188,7 +190,7 @@ function setPillars()
 	for i, playerName in ipairs(playerTable) do
 		--task.wait(1)
 		
-		local isaPlayer, player:Player = helpers.isPlayer(i)
+		local isaPlayer, player = helpers.isPlayer(i)
 		
 		local pillar
 		--local pillar = replicatedStorage.Assets.Pillars.Test:Clone()
@@ -637,7 +639,7 @@ function getDecision(index:number) : string?|{string}?
 	if not isaPlayer then
 		task.wait(math.random(5, 15) / 10)
 		
-		local decision = botLogic.Play(botsFolder:FindFirstChild(playerName), deck, plrCards[index], #playerTable)
+		local decision = botLogic.Play(botsFolder:FindFirstChild(playerName)::Instance, deck, plrCards[index], #playerTable)
 
 		if decision == "Play" then
 			local cardPlayed = botLogic.playCard(botsFolder:FindFirstChild(playerName)::Instance, deck, plrCards[index], #playerTable)
@@ -946,6 +948,13 @@ function gameLoop()
 		until #nearbyPlayers > 0
 		
 		for i, player in ipairs(nearbyPlayers) do
+			statsHandler.playerDataToUpdate[player.Name] = {
+				["RoundsPlayed"] = 1,
+				["RoundsWon"] = 0,
+				["NitroEarned"] = 0,
+				["CardStats"] = {},
+			}
+			
 			table.insert(playerTable, player.Name)
 		end
 		
