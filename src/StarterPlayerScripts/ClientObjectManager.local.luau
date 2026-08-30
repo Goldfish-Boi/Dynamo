@@ -11,7 +11,7 @@ for i, object in ipairs(collectionService:GetTagged("Invisible")) do
 	end
 end
 
-for i, teleporter in ipairs(clientObjects.Teleporters:GetChildren()) do
+--[[for i, teleporter in ipairs(clientObjects.Teleporters:GetChildren()) do
 	local startPart:BasePart? = teleporter:FindFirstChild("Start")::BasePart?
 	local endPart:BasePart? = teleporter:FindFirstChild("End")::BasePart?
 	
@@ -25,4 +25,4 @@ for i, teleporter in ipairs(clientObjects.Teleporters:GetChildren()) do
 		
 		character:PivotTo(CFrame.new(endPart.Position) * character:GetPivot().Rotation)
 	end)
-end
+end]]--
