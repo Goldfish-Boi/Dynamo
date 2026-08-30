@@ -100,6 +100,7 @@ const univeralInfo = table.freeze({
 	["Emotes"] = {
 		["Em001"] = {
 			Name = "Point",
+			IconID = 0,
 			Price = 0,
 		},
 	},
