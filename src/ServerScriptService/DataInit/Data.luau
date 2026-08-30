@@ -53,6 +53,8 @@ function dataModule.returnPlayerData(plr:Player, returnType:string) : {[string]:
 	
 	if returnType == "All" then
 		return currentData
+	elseif returnType == "Equipped" then
+		return currentData["Equipped"]
 	elseif returnType == "Inventory" then
 		return currentData["Inventory"]
 	elseif returnType == "Settings" then
@@ -99,6 +101,8 @@ function constructPlayerData(preloadedData:{[string]:any}?) : {[string]:any}
 					
 					if not data["Stats"]["CardStats"][cardName]["CardsReceived"] then data["Stats"]["CardStats"][cardName]["CardsReceived"] = 0 end
 					if not data["Stats"]["CardStats"][cardName]["CardsUsed"] then data["Stats"]["CardStats"][cardName]["CardsUsed"] = 0 end
+					if not data["Stats"]["CardStats"][cardName]["Steals"] then data["Stats"]["CardStats"][cardName]["Steals"] = 0 end
+					if not data["Stats"]["CardStats"][cardName]["TripleSteals"] then data["Stats"]["CardStats"][cardName]["TripleSteals"] = 0 end
 				end
 			end
 	
