@@ -1469,9 +1469,14 @@ end)
 
 -------------------------------------- Connections --------------------------------------
 
-pcall(function()
-	game:GetService("StarterGui"):SetCore("ResetButtonCallback", false)
-end)
+repeat 
+	local success = pcall(function() 
+		game:GetService("StarterGui"):SetCore("ResetButtonCallback", false) 
+		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, false)
+	end)
+
+	task.wait(1)
+until success
 
 replicatedStorage.Communicators.Remotes.Functions.RequestPlayerDecision.OnClientInvoke = function(DecisionType:string, Data1:(number|boolean)?, Data2:boolean?) : string | {string} | number
 	if DecisionType == "Take" then
