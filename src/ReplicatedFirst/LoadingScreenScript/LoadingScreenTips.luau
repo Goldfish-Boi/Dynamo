@@ -102,6 +102,9 @@ local loadingScreenTips = {
 	"Tip idk it's hard to think of a bunch of loading screen tips",
 	"So much explosive talk, Roblox it's just a card game don't smite me pls",
 	"?",
+	"What?",
+	"Boi",
+	"Son I'm crine",
 	"...",
 	"Job 👻",
 	"!",
@@ -165,7 +168,7 @@ local loadingScreenTips = {
 	"A lot of references in this game only exist because I'm nerding out",
 	"Whole house mad",
 	"📍Folk Valley factory",
-	"There are currently 175 different loading screen tips!",
+	"There are currently 170 different loading screen tips!",
 }
 
 return loadingScreenTips
