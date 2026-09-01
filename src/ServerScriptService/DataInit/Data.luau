@@ -73,6 +73,7 @@ function constructPlayerData(preloadedData:{[string]:any}?) : {[string]:any}
 		if not data["Equipped"]["Emotes"] then data["Equipped"]["Emotes"] = {"Em001"} end
 		if not data["Equipped"]["Explosion"] then data["Equipped"]["Explosion"] = "E001" end
 		if not data["Equipped"]["Pillar"] then data["Equipped"]["Pillar"] = "P001" end
+		if not data["Equipped"]["Misc"] then data["Equipped"]["Misc"] = {} end
 	
 	if not data["Inventory"] then data["Inventory"] = {} end
 		if not data["Inventory"]["Badges"] then data["Inventory"]["Badges"] = {} end
