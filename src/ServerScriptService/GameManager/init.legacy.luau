@@ -11,7 +11,7 @@ local runService = game:GetService("RunService")
 local players = game:GetService("Players")
 local teams = game:GetService("Teams")
 
---local require = require
+local require = require
 local data = require(script.Parent.DataInit.Data)
 local universalInfo = require(replicatedStorage.Modules.UniversalInfo)::{[string]:any}
 local cardInfo = require(replicatedStorage.Modules.CardInfo)
@@ -33,8 +33,8 @@ local circleTemplate = mainScreen.SurfaceGui.Circles.CircleTemplate
 local playerStatus = workspace.Lobby.ServerDataSigns.PlayerStatuses
 
 local currentTurnIndex:number = 0
-local intermissionLength:number = 10
-local bombDutyCountdownLength:number = 0
+local intermissionLength:number = 45
+local bombDutyCountdownLength:number = 20
 
 local botCountOverride:number? = nil
 local roundTime:number?
@@ -796,9 +796,19 @@ function runRoundLoop()
 	moveTurnIndicator(currentTurnIndex)
 	
 	local eliminated = turn(currentTurnIndex)
-
+	
 	while task.wait(0.25) do
-		if #playerTable == 1 or #playerTable == 0 or #deck == 0 then
+		local onlyBots = true
+
+		for i, player in ipairs(playerTable) do
+			if players:FindFirstChild(player) then
+				onlyBots = false
+
+				break
+			end
+		end
+		
+		if #playerTable == 1 or #playerTable == 0 or #deck == 0 or onlyBots then
 			--print("Ending bomb duty", playerTable, #playerTable, deck, #deck)
 			
 			break
@@ -845,6 +855,10 @@ function endRound()
 
 		hrp.Anchored = false
 		player:LoadCharacterAsync()
+	end
+
+	if playerTable[1] and #playerTable == 1 then
+		replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireAllClients("Notification", playerTable[1] .. " was the last person and won!")
 	end
 	
 	task.spawn(function()
@@ -906,6 +920,8 @@ function gameLoop()
 		task.spawn(function()
 			tweenModel(workspace.Lobby.Platform, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), CFrame.new(-98, 28.25, 0))
 		end)
+		
+		replicatedStorage.Communicators.Remotes.Events.OrderClientAction:FireAllClients("Notification", "Bomb duty starting soon, stand on the central platform!")
 		
 		for countDown = bombDutyCountdownLength, 1, -1 do
 			mainScreen.SurfaceGui.TextLabel1.Text = "Bomb duty in " .. tostring(countDown) .. "s"
