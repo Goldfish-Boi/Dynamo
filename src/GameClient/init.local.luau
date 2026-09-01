@@ -6,6 +6,7 @@ local runService = game:GetService("RunService")
 local userInputService = game:GetService("UserInputService")
 local debris = game:GetService("Debris")
 local replicatedStorage = game:GetService("ReplicatedStorage")
+local plr = game.Players.LocalPlayer::Player
 
 local require = require
 local cardInfo:{[string]:any} = require(replicatedStorage.Modules.CardInfo)::{[string]:any}
@@ -308,20 +309,6 @@ function addCardFunctionality(card:Frame)
 
 	local dragDetector = icon:FindFirstChildOfClass("UIDragDetector")
 	if not dragDetector then return end
-
-	--[[card.MouseEnter:Connect(function()
-		if table.find(cardsSelected, card) or dragConnection then return end
-		if hoveredCard == card then return end
-		if hoveredCard and hoveredCard.ZIndex > card.ZIndex then return end
-		
-		if hoveredCard and hoveredCard.ZIndex < card.ZIndex then
-			hoverCard(hoveredCard, false)
-		end
-		
-		hoveredCard = card
-
-		hoverCard(card, true)
-	end)]]--
 	
 	card.MouseMoved:Connect(function()
 		if table.find(cardsSelected, card) or dragConnection or hoveredCard == card or (hoveredCard and hoveredCard.ZIndex > card.ZIndex) then return end
@@ -1068,7 +1055,7 @@ function decisionSteal(cardCount:number) : number | string
 end
 
 function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : string
-	if not game.Players.LocalPlayer then return "Bot 1" end
+	if not plr then return "Bot 1" end
 	
 	antiInactivityCountdown = 20
 	haltCountDown = true
@@ -1097,7 +1084,7 @@ function decisionPickPlayer(hideEmptyDecks:boolean, resetCamera:boolean?) : stri
 	task.wait(0.5)
 	
 	for i, pillar in ipairs(workspace.Round.Pillars:GetChildren()::{Model}) do
-		if pillar:HasTag("Eliminated") or pillar.Name == tostring(game.Players.LocalPlayer) or (not pillar.PrimaryPart) then continue end
+		if pillar:HasTag("Eliminated") or pillar.Name == tostring(plr) or (not pillar.PrimaryPart) then continue end
 		
 		local selectableButton = script.Templates.Player:Clone()
 		local player = game.Players:FindFirstChild(pillar.Name)::Player?
@@ -1252,7 +1239,7 @@ function decisionChooseDeckIndex() : number
 end
 
 function decisionChooseCard() : string
-	if not game.Players.LocalPlayer then return "Defuse" end
+	if not plr then return "Defuse" end
 	
 	antiInactivityCountdown = 20
 	haltCountDown = true
@@ -1432,14 +1419,20 @@ function createNotification(text:string)
 	notification.Parent = notifcationContainer.Notificationtemplate.Parent
 	
 	tweenService:Create(notification, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(1, 0.15)}):Play()
-	tweenService:Create(notification.TextLabel, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {MaxVisibleGraphemes = text:len()}):Play()
+	tweenService:Create(notification.TextLabel, TweenInfo.new(text:len() * 0.025, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {MaxVisibleGraphemes = text:len()}):Play()
 	
 	task.delay(text:len() * 0.1, function()
-		tweenService:Create(notification, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(1, 0.001)}):Play()
+		local absSize = notification.AbsoluteSize
 		
-		task.wait(0.1)
+		notification.Size = UDim2.fromOffset(absSize.X, absSize.Y)
+		notification.AutomaticSize = Enum.AutomaticSize.None
+		notification.TextLabel.AutomaticSize = Enum.AutomaticSize.None
 		
-		notification:Destroy()
+		tweenService:Create(notification, TweenInfo.new(0.125, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.fromOffset(absSize.X, 1)}):Play()
+		
+		task.wait(0.125)
+		
+		notification:Destroy()f
 	end)
 	
 	for count = 1, text:len() do
@@ -1779,3 +1772,13 @@ end)
 replicatedStorage.Communicators.Remotes.Events.GiveDeck.OnClientEvent:Connect(function(deck) 
 	generateDeckFromTable(deck, true)
 end)
+
+function setupCharacter(char:Model)
+	workspace.Camera.CameraType = Enum.CameraType.Custom
+end
+
+if plr.Character then
+	setupCharacter(plr.Character)
+end
+
+plr.CharacterAdded:Connect(setupCharacter)
