@@ -5,7 +5,7 @@
 2. Install the Roblox Player
 3. Open experience page and press the play button
 4. Wait for the big screen in the main lobby to say "Bomb duty in __s" / "Bomb duty now"
-5. Jump on the platform that opens up in front of the screen. It shall send you to the round soon.
+5. Jump on the platform that opens up in front of the screen, a notification should appear to indicate this to you. Standing on it shall send you to the round soon.
 
 ## Dynamo (+ Roblox default) controls
 - `WASD` - Move character
@@ -18,8 +18,11 @@
 - `/` - Open chat
 
 ## Mechanics
-Stealing - Use *two* of the same card in order to let you take one card from another player
-Triple stealing - Use *three* of the same card in order to steal a specific type of card from another player. But if they don't have that card you don't get anything!
+- You can re-arrange your cards to your liking when it is not currently your turn
+- Hovering over a card brings up a description on its functionality
+- Take - Lets you take a card from the top of the deck, you must avoid getting dynamite cards
+- Stealing - Use *two* of the same card in order to let you take one card from another player
+- Triple stealing - Use *three* of the same card in order to steal a specific type of card from another player. But if they don't have that card you don't get anything!
 
 ## What is Dynamo
 My very own recreation of the popular card game *Exploding Kittens* made into a Roblox game, where the goal is to avoid drawing an explosive card from the deck and to be the last one standing, using other cards and strategies to stay alive until the end.
