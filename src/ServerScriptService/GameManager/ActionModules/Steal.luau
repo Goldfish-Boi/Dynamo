@@ -7,7 +7,7 @@ local helpers = require(script.Parent.Parent.Helpers)
 local stealModule = {}
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
-0
+ 
 function stealModule.Steal(index:number, actionInfo:types.ActionInfo)
 	if (not helpers.getPlrCardsProvider) or (not helpers.getPlayerTable) or (not helpers.getPillarsTable) then warn("No Helpers registered") return end
 	
