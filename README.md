@@ -24,4 +24,5 @@ Triple stealing - Use *three* of the same card in order to steal a specific type
 ## What is Dynamo
 My very own recreation of the popular card game *Exploding Kittens* made into a Roblox game, where the goal is to avoid drawing an explosive card from the deck and to be the last one standing, using other cards and strategies to stay alive until the end.
 
+<img width="2380" height="1025" alt="Screenshot 2026-08-29 203042" src="https://github.com/user-attachments/assets/84376e62-25be-4494-ac9d-64f7c1d4df65" />
 <img width="1920" height="1080" alt="DynamoThumbnail" src="https://github.com/user-attachments/assets/973b6dd5-6354-4f2e-aceb-e2a975662c38" />
