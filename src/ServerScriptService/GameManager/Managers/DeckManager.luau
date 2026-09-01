@@ -15,13 +15,13 @@ local deckManager = {
 
 const cards = table.freeze({
 	--{Name = "Test", ChancePerPlr = 300},
-	{Name = "Shuffle", ChancePerPlr = 100},
-	{Name = "Cheezburger", ChancePerPlr = 100},
-	{Name = "Bloxy Cola", ChancePerPlr = 100},
-	{Name = "Cake", ChancePerPlr = 100},
-	{Name = "Taco", ChancePerPlr = 100},
-	{Name = "Choco Milk", ChancePerPlr = 100},
-	{Name = "Reverse", ChancePerPlr = 750},
+	{Name = "Shuffle", ChancePerPlr = 150},
+	{Name = "Cheezburger", ChancePerPlr = 150},
+	{Name = "Bloxy Cola", ChancePerPlr = 150},
+	{Name = "Cake", ChancePerPlr = 150},
+	{Name = "Taco", ChancePerPlr = 150},
+	{Name = "Choco Milk", ChancePerPlr = 150},
+	{Name = "Reverse", ChancePerPlr = 100},
 	--{Name = "Request", ChancePerPlr = 125},
 	--{Name = "Deny", ChancePerPlr = 120},
 	--{Name = "Analyse", ChancePerPlr = 80},
@@ -34,8 +34,8 @@ const cards = table.freeze({
 })
 
 const variableCards = table.freeze({
-	{Name = "Skip", ChancePerPlr = 100, CanBecome = {"Ultra Skip"}, Chance = {20}},
-	{Name = "Attack", ChancePerPlr = 100, CanBecome = {"Targeted Attack"}, Chance = {33}},
+	{Name = "Skip", ChancePerPlr = 150, CanBecome = {"Ultra Skip"}, Chance = {20}},
+	{Name = "Attack", ChancePerPlr = 150, CanBecome = {"Targeted Attack"}, Chance = {33}},
 	--{Name = "Peek", ChancePerPlr = 100, CanBecome = {"Adjust"}, Chance = {50}},
 })
 
@@ -43,11 +43,10 @@ const nonStartingCards = table.freeze({
 	{Name = "Containment", ChancePerPlr = 7.5},
 	{Name = "Defuse", ChancePerPlr = 33},
 	--{Name = "Nuke", ChancePerPlr = 4},
-	{Name = "Doomsday", ChancePerPlr = 2},
+	--{Name = "Doomsday", ChancePerPlr = 2},
 	{Name = "Ploobie", ChancePerPlr = 0.5},
 	--{Name = "Noclip", Amount = 1},
 })
-
 
 local random = Random.new()
 
