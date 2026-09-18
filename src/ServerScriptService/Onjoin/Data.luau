@@ -184,9 +184,9 @@ function dataModule.loadPlayerData(plr:Player)
 		return playerData:GetAsync(tostring(plr.UserId))
 	end)
 	
-	if not success then
+	--[[if not success then
 		plr:Kick("Failed to load in data, please try again another time")
-	end
+	end]]--
 	
 	data = constructPlayerData(data)
 	
