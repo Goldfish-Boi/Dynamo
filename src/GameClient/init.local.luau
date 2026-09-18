@@ -1432,7 +1432,7 @@ function createNotification(text:string)
 		
 		task.wait(0.125)
 		
-		notification:Destroy()f
+		notification:Destroy()
 	end)
 	
 	for count = 1, text:len() do
@@ -1774,7 +1774,25 @@ replicatedStorage.Communicators.Remotes.Events.GiveDeck.OnClientEvent:Connect(fu
 end)
 
 function setupCharacter(char:Model)
+	local hum = char:WaitForChild("Humanoid")::Humanoid
+	
 	workspace.Camera.CameraType = Enum.CameraType.Custom
+	
+	hum.Died:Connect(function()
+		if #originalCameraCFrame > 0 then
+			task.delay(0.5, function()
+				table.remove(originalCameraCFrame, #originalCameraCFrame)
+
+				if #originalCameraCFrame == 0 then
+					workspace.Camera.CameraType = Enum.CameraType.Custom
+				end
+			end)
+
+			tweenService:Create(workspace.Camera, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalCameraCFrame[#originalCameraCFrame]}):Play()
+		else
+			workspace.Camera.CameraType = Enum.CameraType.Custom
+		end
+	end)
 end
 
 if plr.Character then
