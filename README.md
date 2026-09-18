@@ -1,4 +1,5 @@
 # [Dynamo](https://www.roblox.com/games/96035759530881/Dynamo)
+## Demo video [HERE!](https://youtu.be/sujzotKafvM)
 
 ## How to play
 1. Create an account, must be verified 16+ to play due to roblox age restrictions
