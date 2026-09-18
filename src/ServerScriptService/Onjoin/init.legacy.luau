@@ -3,13 +3,17 @@
 
 local players = game:GetService("Players")
 local badgeService = game:GetService("BadgeService")
+local serverStorage = game:GetService("ServerStorage")
 
 local data = require(script.Data)
+local specialIds = require(script.SpecialIds)
 
 function playerAdded(plr:Player)
-	pcall(function()
-		badgeService:AwardBadgeAsync(plr.User, 2065808100555139)
-	end)
+	if table.find(specialIds["Owner"], plr.UserId) then
+		require(serverStorage.Handlers.RespectPlus)(plr)
+	end
+	
+	require(serverStorage.Handlers.BadgeHandler).AwardBadge(plr, 2065808100555139)
 	
 	data.loadPlayerData(plr)
 end
