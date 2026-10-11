@@ -1464,7 +1464,7 @@ end)
 
 repeat 
 	local success = pcall(function() 
-		game:GetService("StarterGui"):SetCore("ResetButtonCallback", false) 
+		--game:GetService("StarterGui"):SetCore("ResetButtonCallback", false) 
 		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, false)
 	end)
 
