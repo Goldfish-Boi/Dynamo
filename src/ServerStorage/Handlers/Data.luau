@@ -37,12 +37,12 @@ function dataModule.returnAllData()
 	return tablePlayerData
 end
 
-function dataModule.returnPlayerData(plr:Player, returnType:string) : {[string]:any} | string
+function dataModule.returnPlayerData(plr:Player, returnType:string) : {[string]:any|{any}} | string
 	local attempts = 0
 	
 	repeat
 		attempts += 1
-		task.wait(0.1)
+		task.wait(0.5)
 	until tablePlayerData[plr.UserId] or attempts == 100
 	
 	local currentData = tablePlayerData[plr.UserId]
@@ -94,23 +94,16 @@ function constructPlayerData(preloadedData:{[string]:any}?) : {[string]:any}
 		if not data["Stats"]["RoundsPlayed"] then data["Stats"]["RoundsPlayed"] = 0 end
 		if not data["Stats"]["RoundsWon"] then data["Stats"]["RoundsWon"] = 0 end
 		if not data["Stats"]["TotalPlaytime"] then data["Stats"]["TotalPlaytime"] = 0 end
+		if not data["Stats"]["Sessions"] then data["Stats"]["Sessions"] = 0 end
 		
 		if not data["Stats"]["CardStats"] then data["Stats"]["CardStats"] = {} end
-			for cardName:string, cardInfo in pairs(cardInfo) do
-				if not data["Stats"]["CardStats"][cardName] then
-					data["Stats"]["CardStats"][cardName] = {}
-					
-					if not data["Stats"]["CardStats"][cardName]["CardsReceived"] then data["Stats"]["CardStats"][cardName]["CardsReceived"] = 0 end
-					if not data["Stats"]["CardStats"][cardName]["CardsUsed"] then data["Stats"]["CardStats"][cardName]["CardsUsed"] = 0 end
-					if not data["Stats"]["CardStats"][cardName]["Steals"] then data["Stats"]["CardStats"][cardName]["Steals"] = 0 end
-					if not data["Stats"]["CardStats"][cardName]["TripleSteals"] then data["Stats"]["CardStats"][cardName]["TripleSteals"] = 0 end
-				end
-			end
 	
 	return data
 end
 
 function stitchData(userId:number, previousData:{any}?) : {[string]:any}
+	print("Stitching data")
+	
 	local updateData:{[string]:any} = copyTable(updatePlayerData[userId])
 	local data
 	
@@ -174,6 +167,8 @@ function stitchData(userId:number, previousData:{any}?) : {[string]:any}
 		end
 	end
 	
+	print(data)
+	
 	return data
 end
 
@@ -184,15 +179,21 @@ function dataModule.loadPlayerData(plr:Player)
 		return playerData:GetAsync(tostring(plr.UserId))
 	end)
 	
-	--[[if not success then
+	if not success then
 		plr:Kick("Failed to load in data, please try again another time")
-	end]]--
+		return
+	end
 	
 	data = constructPlayerData(data)
 	
 	print(data)
 	
 	tablePlayerData[plr.UserId] = data
+	updatePlayerData[plr.UserId] = {
+		["Stats"] = {
+			["Sessions"] = 1
+		},
+	}
 end
 
 function dataModule.equipItem(plr:Player, position:string, value:string)
@@ -295,11 +296,14 @@ end
 
 function dataModule.savePlayerData(plr:Player)
 	pcall(function()
-		playerData:SetAsync(tostring(plr.UserId), tablePlayerData[plr.UserId])
-		--playerData:UpdateAsync(tostring(plr.UserId), stitchData(plr.UserId))
+		--playerData:SetAsync(tostring(plr.UserId), tablePlayerData[plr.UserId])
+		playerData:UpdateAsync(tostring(plr.UserId), function(oldData)
+			return stitchData(plr.UserId, oldData)
+		end)
 	end)
 	
 	tablePlayerData[plr.UserId] = nil
+	updatePlayerData[plr.UserId] = nil
 end
 
 --------------------------------- Connections ---------------------------------
@@ -312,8 +316,10 @@ end
 game:BindToClose(function()
 	for userId, data in pairs(tablePlayerData) do
 		pcall(function()
-			playerData:SetAsync(tostring(userId), data)
-			--playerData:UpdateAsync(tostring(userId), stitchData(userId))
+			--playerData:SetAsync(tostring(userId), data)
+			playerData:UpdateAsync(tostring(userId), function(oldData)
+				return stitchData(userId, oldData)
+			end)
 		end)
 		
 		task.wait(0.1)
