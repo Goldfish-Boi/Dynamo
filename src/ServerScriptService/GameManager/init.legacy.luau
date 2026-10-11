@@ -12,7 +12,7 @@ local players = game:GetService("Players")
 local teams = game:GetService("Teams")
 
 local require = require
-local data = require(script.Parent.DataInit.Data)
+local data = require(serverStorage.Handlers.Data)
 local universalInfo = require(replicatedStorage.Modules.UniversalInfo)::{[string]:any}
 local cardInfo = require(replicatedStorage.Modules.CardInfo)
 local deckManager = require(script.Managers.DeckManager)
