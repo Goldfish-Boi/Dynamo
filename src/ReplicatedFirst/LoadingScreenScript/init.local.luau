@@ -54,7 +54,13 @@ for i, service in ipairs(game:GetChildren()) do
 		end
 	end
 	
-	tweenService:Create(loadingScreen.Frame.Spin.UIGradient, TweenInfo.new(0.125, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Offset = Vector2.new(0, 0.5 - (i / serviceCount))}):Play()
+	if (i / serviceCount) == 1 then
+		loadingScreen.Frame.Spin.UIGradient.Color = ColorSequence.new(Color3.new(1, 1, 1))
+	else
+		loadingScreen.Frame.Spin.UIGradient.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new((i / serviceCount) + 0.001, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new((i / serviceCount) + 0.002, Color3.new(0, 0, 0)), ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))})
+	end
+	
+	--tweenService:Create(loadingScreen.Frame.Spin.UIGradient, TweenInfo.new(0.125, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Offset = Vector2.new(0, 0.5 - (i / serviceCount))}):Play()
 	
 	task.wait()
 end
