@@ -33,6 +33,7 @@ managers["CreditsManager"] = require(script.MenuManagers.CreditsManager)
 managers["InventoryManager"] = require(script.MenuManagers.InventoryManager)
 managers["SettingsManager"] = require(script.MenuManagers.SettingsManager)
 managers["ShopManager"] = require(script.MenuManagers.ShopManager)
+managers["BadgesManager"] = require(script.MenuManagers.BadgesManager)
 
 local menuDataManager = require(script.MenuManagers.MenuDataManager)
 
